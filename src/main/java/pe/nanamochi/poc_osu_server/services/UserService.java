@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import pe.nanamochi.poc_osu_server.entities.db.User;
 import pe.nanamochi.poc_osu_server.repositories.UserRepository;
 import pe.nanamochi.poc_osu_server.utils.Security;
+import pe.nanamochi.poc_osu_server.utils.Validation;
 
 import java.security.NoSuchAlgorithmException;
 
@@ -16,6 +17,14 @@ public class UserService {
 
     public User login(String username, String passwordMd5) {
         return userRepository.findByUsernameAndPasswordMd5(username, passwordMd5);
+    }
+
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     public User createUser(String username, String passwordPlainText, String email, int country) throws NoSuchAlgorithmException {

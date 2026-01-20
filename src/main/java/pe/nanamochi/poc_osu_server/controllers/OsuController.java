@@ -18,7 +18,7 @@ import pe.nanamochi.poc_osu_server.services.SessionService;
 import pe.nanamochi.poc_osu_server.services.StatService;
 import pe.nanamochi.poc_osu_server.services.UserService;
 import pe.nanamochi.poc_osu_server.utils.IPApi;
-import pe.nanamochi.poc_osu_server.utils.Security;
+import pe.nanamochi.poc_osu_server.utils.Validation;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,6 +26,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -155,6 +156,7 @@ public class OsuController {
 
         if (session == null) {
             packetHandler.writeRestart(stream, 0);
+            packetHandler.writeAnnouncement(stream, "The server has restarted.");
 
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -166,35 +168,49 @@ public class OsuController {
 
     @PostMapping(value = "/users")
     public ResponseEntity<String> registerAccount(@RequestHeader MultiValueMap<String, String> headers, @RequestParam MultiValueMap<String,String> paramMap) throws NoSuchAlgorithmException, UnknownHostException {
-        // TODO: Add check to see if username, email, and password are present
+        if (!paramMap.containsKey("user[username]") ||
+            !paramMap.containsKey("user[user_email]") ||
+            !paramMap.containsKey("user[password]")) {
+            return ResponseEntity.badRequest().body("Missing required params");
+        }
 
         String username = paramMap.get("user[username]").getFirst();
         String email = paramMap.get("user[user_email]").getFirst();
         String passwordPlainText = paramMap.get("user[password]").getFirst();
-        String passwordMd5 = Security.getMd5(passwordPlainText);
         int check = Integer.parseInt(paramMap.get("check").getFirst());
 
-        System.out.println(username);
-        System.out.println(email);
-        System.out.println(passwordPlainText);
-        System.out.println(passwordMd5);
-        System.out.println(check);
-
-        // TODO: Add checks for username, email, and password
-        // Usernames must:
-        // - be between 2 and 15 characters in length
-        // - not contain both ' ' and '_', one is fine
-        // - not be in the config's `disallowed_names` list
-        // - not already be taken by another player
-        // Emails must:
-        // - match the regex `^[^@\s]{1,200}@[^@\s\.]{1,30}\.[^@\.\s]{1,24}$`
-        // - not already be taken by another player
-        // Passwords must:
-        // - be within 8-32 characters in length
-        // - have more than 3 unique characters
-        // - not be in the config's `disallowed_passwords` list
-
         if (check == 0) {
+            HashMap<String, String> errors = new HashMap<>();
+            if (!Validation.isValidUsername(username)) {
+                errors.put("username", "Invalid username.");
+            }
+            if (userService.findByUsername(username) != null) {
+                errors.put("username", "Username already taken by another player.");
+            }
+            if (!Validation.isValidEmail(email)) {
+                errors.put("user_email", "Invalid email syntax.");
+            }
+            if (userService.findByEmail(email) != null) {
+                errors.put("user_email", "Email already taken by another player.");
+            }
+            if (!Validation.isValidPassword(passwordPlainText)) {
+                errors.put("password", "Password must be between 8 and 32 characters and contain more than 3 unique characters.");
+            }
+
+            if (!errors.isEmpty()) {
+                StringBuilder responseBody = new StringBuilder("{\"form_error\": {\"user\": {");
+                int count = 0;
+                for (String field : errors.keySet()) {
+                    if (count > 0) {
+                        responseBody.append(", ");
+                    }
+                    responseBody.append("\"").append(field).append("\": [\"").append(errors.get(field)).append("\"]");
+                    count++;
+                }
+                responseBody.append("}}}");
+                return ResponseEntity.badRequest().body(responseBody.toString());
+            }
+
             User user = userService.createUser(username, passwordPlainText, email, 0);
             statService.createAllGamemodes(user);
         }

@@ -13,6 +13,7 @@ import pe.nanamochi.poc_osu_server.entities.LoginData;
 import pe.nanamochi.poc_osu_server.entities.db.Session;
 import pe.nanamochi.poc_osu_server.entities.db.Stat;
 import pe.nanamochi.poc_osu_server.entities.db.User;
+import pe.nanamochi.poc_osu_server.packets.PacketHandler;
 import pe.nanamochi.poc_osu_server.services.SessionService;
 import pe.nanamochi.poc_osu_server.services.StatService;
 import pe.nanamochi.poc_osu_server.services.UserService;
@@ -32,6 +33,9 @@ import java.util.UUID;
 @RequestMapping("/bancho")
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class OsuController {
+
+    @Autowired
+    private PacketHandler packetHandler;
 
     @Autowired
     private UserService userService;
@@ -66,9 +70,8 @@ public class OsuController {
         String choToken = "";
 
         if (!headers.containsKey("X-Real-IP")) {
-            User user = new User(); // Temporary user to write the failure packets
-            user.writeLoginReply(stream, -1);
-            user.writeAnnouncement(stream, "Could not determine your IP address.");
+            packetHandler.writeLoginReply(stream, -1);
+            packetHandler.writeAnnouncement(stream, "Could not determine your IP address.");
 
             responseHeaders.add("cho-token", "no");
             return ResponseEntity.ok()
@@ -123,18 +126,17 @@ public class OsuController {
 
             Stat ownStats = statService.getStats(user, 0); // Standard mode stats
 
-            user.writeProtocolNegotiation(stream);
-            user.writeLoginReply(stream, user.getId());
-            user.writeAnnouncement(stream, "Welcome to this Poc Osu! Server!");
-            user.writeUserPresence(stream, session);
-            user.writeUserStats(stream, session, ownStats);
-            user.writeChannelInfoComplete(stream);
+            packetHandler.writeProtocolNegotiation(stream);
+            packetHandler.writeLoginReply(stream, user.getId());
+            packetHandler.writeAnnouncement(stream, "Welcome to this Poc Osu! Server!");
+            packetHandler.writeUserPresence(stream, user, session);
+            packetHandler.writeUserStats(stream, session, ownStats);
+            packetHandler.writeChannelInfoComplete(stream);
 
             choToken = session.getId().toString();
         } else {
-            user = new User(); // Temporary user to write the failure packets
-            user.writeLoginReply(stream, -1);
-            user.writeAnnouncement(stream, "Invalid username or password.");
+            packetHandler.writeLoginReply(stream, -1);
+            packetHandler.writeAnnouncement(stream, "Invalid username or password.");
 
             choToken = "no";
         }
@@ -152,8 +154,7 @@ public class OsuController {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
         if (session == null) {
-            User user = new User(); // Temporary user to write the failure packets
-            user.writeRestart(stream, 0);
+            packetHandler.writeRestart(stream, 0);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)

@@ -13,7 +13,8 @@ import pe.nanamochi.poc_osu_server.entities.LoginData;
 import pe.nanamochi.poc_osu_server.entities.db.Session;
 import pe.nanamochi.poc_osu_server.entities.db.Stat;
 import pe.nanamochi.poc_osu_server.entities.db.User;
-import pe.nanamochi.poc_osu_server.packets.PacketHandler;
+import pe.nanamochi.poc_osu_server.packets.PacketReader;
+import pe.nanamochi.poc_osu_server.packets.PacketWriter;
 import pe.nanamochi.poc_osu_server.services.SessionService;
 import pe.nanamochi.poc_osu_server.services.StatService;
 import pe.nanamochi.poc_osu_server.services.UserService;
@@ -24,9 +25,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -36,7 +39,10 @@ import java.util.UUID;
 public class OsuController {
 
     @Autowired
-    private PacketHandler packetHandler;
+    private PacketWriter packetWriter;
+
+    @Autowired
+    private PacketReader packetReader;
 
     @Autowired
     private UserService userService;
@@ -48,13 +54,13 @@ public class OsuController {
     private StatService statService;
 
     @PostMapping(value = "/", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public ResponseEntity<Resource> banchoHandler(@RequestHeader MultiValueMap<String, String> headers, @RequestBody String data) throws IOException {
+    public ResponseEntity<Resource> banchoHandler(@RequestHeader MultiValueMap<String, String> headers, @RequestBody byte[] data) throws IOException {
         System.out.println("Received bancho request");
 
         ResponseEntity<Resource> response = null;
 
         if (!headers.containsKey("osu-token")) {
-            response = handleLogin(headers, data);
+            response = handleLogin(headers, new String(data, StandardCharsets.UTF_8));
         } else {
             response = handleBanchoRequest(headers, data);
         }
@@ -71,8 +77,8 @@ public class OsuController {
         String choToken = "";
 
         if (!headers.containsKey("X-Real-IP")) {
-            packetHandler.writeLoginReply(stream, -1);
-            packetHandler.writeAnnouncement(stream, "Could not determine your IP address.");
+            packetWriter.writeLoginReply(stream, -1);
+            packetWriter.writeAnnouncement(stream, "Could not determine your IP address.");
 
             responseHeaders.add("cho-token", "no");
             return ResponseEntity.ok()
@@ -127,17 +133,17 @@ public class OsuController {
 
             Stat ownStats = statService.getStats(user, 0); // Standard mode stats
 
-            packetHandler.writeProtocolNegotiation(stream);
-            packetHandler.writeLoginReply(stream, user.getId());
-            packetHandler.writeAnnouncement(stream, "Welcome to this Poc Osu! Server!");
-            packetHandler.writeUserPresence(stream, user, session);
-            packetHandler.writeUserStats(stream, session, ownStats);
-            packetHandler.writeChannelInfoComplete(stream);
+            packetWriter.writeProtocolNegotiation(stream);
+            packetWriter.writeLoginReply(stream, user.getId());
+            packetWriter.writeAnnouncement(stream, "Welcome to this Poc Osu! Server!");
+            packetWriter.writeUserPresence(stream, user, session);
+            packetWriter.writeUserStats(stream, session, ownStats);
+            packetWriter.writeChannelInfoComplete(stream);
 
             choToken = session.getId().toString();
         } else {
-            packetHandler.writeLoginReply(stream, -1);
-            packetHandler.writeAnnouncement(stream, "Invalid username or password.");
+            packetWriter.writeLoginReply(stream, -1);
+            packetWriter.writeAnnouncement(stream, "Invalid username or password.");
 
             choToken = "no";
         }
@@ -150,19 +156,24 @@ public class OsuController {
                 .body(new ByteArrayResource(stream.toByteArray()));
     }
 
-    private ResponseEntity<Resource> handleBanchoRequest(MultiValueMap<String, String> headers, String data) throws IOException {
+    private ResponseEntity<Resource> handleBanchoRequest(MultiValueMap<String, String> headers, byte[] data) throws IOException {
         Session session = sessionService.getSessionByID(UUID.fromString(Objects.requireNonNull(headers.getFirst("osu-token"))));
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
         if (session == null) {
-            packetHandler.writeRestart(stream, 0);
-            packetHandler.writeAnnouncement(stream, "The server has restarted.");
+            packetWriter.writeRestart(stream, 0);
+            packetWriter.writeAnnouncement(stream, "The server has restarted.");
 
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(new ByteArrayResource(stream.toByteArray()));
         }
 
+        // Read packets from request body
+        List<Object> packets = packetReader.readPackets(data);
+        for (Object packet : packets) {
+            System.out.println(packet);
+        }
         return null;
     }
 

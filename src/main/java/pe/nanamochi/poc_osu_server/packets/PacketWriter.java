@@ -13,15 +13,15 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 @Component
-public class PacketHandler {
+public class PacketWriter {
 
     private final IDataWriter writer;
 
-    public PacketHandler() {
+    public PacketWriter() {
         this.writer = new BanchoDataWriter();
     }
 
-    public PacketHandler(IDataWriter writer) {
+    public PacketWriter(IDataWriter writer) {
         this.writer = writer;
     }
 

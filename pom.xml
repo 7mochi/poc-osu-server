@@ -29,7 +29,9 @@
 	</licenses>
 
 	<developers>
-		<developer/>
+		<developer>
+			<id>7mochi</id>
+		</developer>
 	</developers>
 
 	<scm>

@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -41,6 +43,8 @@ import pe.nanamochi.banchus.utils.Validation;
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class OsuController {
 
+  private static final Logger logger = LoggerFactory.getLogger(OsuController.class);
+
   @Autowired private PacketWriter packetWriter;
 
   @Autowired private PacketReader packetReader;
@@ -57,13 +61,13 @@ public class OsuController {
   public ResponseEntity<Resource> banchoHandler(
       @RequestHeader MultiValueMap<String, String> headers, @RequestBody byte[] data)
       throws IOException {
-    System.out.println("Received bancho request");
-
     ResponseEntity<Resource> response = null;
 
     if (!headers.containsKey("osu-token")) {
+      logger.debug("Handling login request");
       response = handleLogin(headers, new String(data, StandardCharsets.UTF_8));
     } else {
+      logger.debug("Handling bancho request");
       response = handleBanchoRequest(headers, data);
     }
 
@@ -206,7 +210,6 @@ public class OsuController {
     // Read packets from request body
     List<Packet> packets = packetReader.readPackets(data);
     for (Packet packet : packets) {
-      System.out.println("Received packet: " + packet.getPacketType());
       packetHandler.handlePacket(packet, session, stream);
     }
 

@@ -1,6 +1,8 @@
 package pe.nanamochi.banchus.packets;
 
 import java.io.ByteArrayOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pe.nanamochi.banchus.entities.db.Session;
@@ -9,10 +11,12 @@ import pe.nanamochi.banchus.packets.client.*;
 @Component
 public class PacketHandler {
 
+  private static final Logger logger = LoggerFactory.getLogger(PacketHandler.class);
+
   @Autowired private PacketWriter packetWriter;
 
   public void handlePacket(Packet packet, Session session, ByteArrayOutputStream responseStream) {
-    System.out.println("Handling packet: " + packet.getPacketType());
+    logger.debug("Handling packet: {}", packet.getPacketType());
 
     switch (packet.getPacketType()) {
       case OSU_USER_STATUS -> handleUserStatus((UserStatusPacket) packet, session, responseStream);
@@ -27,7 +31,7 @@ public class PacketHandler {
           handleReceiveUpdates((ReceiveUpdatesPacket) packet, session, responseStream);
       case OSU_USER_STATS_REQUEST ->
           handleUserStatsRequest((UserStatsRequestPacket) packet, session, responseStream);
-      default -> System.out.println("Unhandled packet type: " + packet.getPacketType());
+      default -> logger.warn("Packet {} not implemented yet.", packet.getPacketType());
     }
   }
 

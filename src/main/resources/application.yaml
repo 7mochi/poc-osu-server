@@ -12,3 +12,8 @@ spring:
         dialect: org.hibernate.dialect.MariaDBDialect
     hibernate:
       ddl-auto: create
+
+logging:
+  level:
+    root: WARN
+    pe.nanamochi.banchus: DEBUG

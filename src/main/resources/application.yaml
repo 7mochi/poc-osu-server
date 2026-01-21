@@ -1,8 +1,8 @@
 spring:
   application:
-    name: poc-osu-server
+    name: banchus
   datasource:
-    url: jdbc:mariadb://localhost:3306/poc_osu_db
+    url: jdbc:mariadb://localhost:3306/banchus
     username: root
     password: root
     driver-class-name: org.mariadb.jdbc.Driver

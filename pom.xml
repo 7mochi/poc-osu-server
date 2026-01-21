@@ -11,9 +11,9 @@
 	</parent>
 
 	<groupId>pe.nanamochi</groupId>
-	<artifactId>poc-osu-server</artifactId>
+	<artifactId>banchus</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>poc-osu-server</name>
+	<name>banchus</name>
 	<description>osu! Server</description>
 
 	<url/>
@@ -45,13 +45,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<scope>runtime</scope>
-			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>org.mariadb.jdbc</groupId>

@@ -9,25 +9,25 @@ import pe.nanamochi.banchus.services.StatService;
 @Component
 public class DataSeeder implements CommandLineRunner {
 
-    private final UserRepository userRepository;
-    private final StatService statService;
+  private final UserRepository userRepository;
+  private final StatService statService;
 
-    public DataSeeder(UserRepository userRepository, StatService statService) {
-        this.userRepository = userRepository;
-        this.statService = statService;
+  public DataSeeder(UserRepository userRepository, StatService statService) {
+    this.userRepository = userRepository;
+    this.statService = statService;
+  }
+
+  @Override
+  public void run(String... args) {
+    if (userRepository.count() == 0) {
+      User user = new User();
+      user.setUsername("test");
+      user.setEmail("asd@gmail.com");
+      user.setPasswordMd5("098f6bcd4621d373cade4e832627b4f6"); // test
+      user.setCountry(169); // 169 -> PE
+
+      userRepository.save(user);
+      statService.createAllGamemodes(user);
     }
-
-    @Override
-    public void run(String... args) {
-        if (userRepository.count() == 0) {
-            User user = new User();
-            user.setUsername("test");
-            user.setEmail("asd@gmail.com");
-            user.setPasswordMd5("098f6bcd4621d373cade4e832627b4f6"); // test
-            user.setCountry(169); // 169 -> PE
-
-            userRepository.save(user);
-            statService.createAllGamemodes(user);
-        }
-    }
+  }
 }

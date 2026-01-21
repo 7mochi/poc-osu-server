@@ -8,8 +8,8 @@ import pe.nanamochi.banchus.packets.Packets;
 @Data
 @NoArgsConstructor
 public class ChannelInfoCompletePacket implements Packet {
-    @Override
-    public Packets getPacketType() {
-        return Packets.BANCHO_CHANNEL_INFO_COMPLETE;
-    }
+  @Override
+  public Packets getPacketType() {
+    return Packets.BANCHO_CHANNEL_INFO_COMPLETE;
+  }
 }

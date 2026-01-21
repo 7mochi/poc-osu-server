@@ -10,10 +10,10 @@ import pe.nanamochi.banchus.packets.Packets;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoginReplyPacket implements Packet {
-    private int userId;
+  private int userId;
 
-    @Override
-    public Packets getPacketType() {
-        return Packets.BANCHO_LOGIN_REPLY;
-    }
+  @Override
+  public Packets getPacketType() {
+    return Packets.BANCHO_LOGIN_REPLY;
+  }
 }

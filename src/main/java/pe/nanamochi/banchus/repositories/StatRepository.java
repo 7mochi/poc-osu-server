@@ -7,5 +7,5 @@ import pe.nanamochi.banchus.entities.db.User;
 
 @Repository
 public interface StatRepository extends JpaRepository<Stat, Integer> {
-    Stat findByUserAndGamemode(User user, Integer gamemode);
+  Stat findByUserAndGamemode(User user, Integer gamemode);
 }

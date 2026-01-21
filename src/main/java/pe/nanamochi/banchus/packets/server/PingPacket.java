@@ -8,8 +8,8 @@ import pe.nanamochi.banchus.packets.Packets;
 @Data
 @NoArgsConstructor
 public class PingPacket implements Packet {
-    @Override
-    public Packets getPacketType() {
-        return Packets.BANCHO_PING;
-    }
+  @Override
+  public Packets getPacketType() {
+    return Packets.BANCHO_PING;
+  }
 }

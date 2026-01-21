@@ -8,14 +8,14 @@ import pe.nanamochi.banchus.packets.Packets;
 @Data
 @AllArgsConstructor
 public class ProtocolNegotiationPacket implements Packet {
-    private int protocolVersion;
+  private int protocolVersion;
 
-    public ProtocolNegotiationPacket() {
-        this.protocolVersion = 19;
-    }
+  public ProtocolNegotiationPacket() {
+    this.protocolVersion = 19;
+  }
 
-    @Override
-    public Packets getPacketType() {
-        return Packets.BANCHO_PROTOCOL_NEOGITIATION;
-    }
+  @Override
+  public Packets getPacketType() {
+    return Packets.BANCHO_PROTOCOL_NEOGITIATION;
+  }
 }

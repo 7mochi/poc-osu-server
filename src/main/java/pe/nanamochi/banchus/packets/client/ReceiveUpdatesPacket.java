@@ -10,10 +10,10 @@ import pe.nanamochi.banchus.packets.Packets;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReceiveUpdatesPacket implements Packet {
-    private int presenceFilter;
+  private int presenceFilter;
 
-    @Override
-    public Packets getPacketType() {
-        return Packets.OSU_RECEIVE_UPDATES;
-    }
+  @Override
+  public Packets getPacketType() {
+    return Packets.OSU_RECEIVE_UPDATES;
+  }
 }

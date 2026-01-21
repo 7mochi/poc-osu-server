@@ -10,17 +10,17 @@ import pe.nanamochi.banchus.packets.Packets;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserPresencePacket implements Packet {
-    private int userId;
-    private String username;
-    private int utcOffset;
-    private int countryCode;
-    private int permissions;
-    private float latitude;
-    private float longitude;
-    private int globalRank;
+  private int userId;
+  private String username;
+  private int utcOffset;
+  private int countryCode;
+  private int permissions;
+  private float latitude;
+  private float longitude;
+  private int globalRank;
 
-    @Override
-    public Packets getPacketType() {
-        return Packets.BANCHO_USER_PRESENCE;
-    }
+  @Override
+  public Packets getPacketType() {
+    return Packets.BANCHO_USER_PRESENCE;
+  }
 }

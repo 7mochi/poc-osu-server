@@ -10,10 +10,10 @@ import pe.nanamochi.banchus.packets.Packets;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RestartPacket implements Packet {
-    private int retryMs;
+  private int retryMs;
 
-    @Override
-    public Packets getPacketType() {
-        return Packets.BANCHO_RESTART;
-    }
+  @Override
+  public Packets getPacketType() {
+    return Packets.BANCHO_RESTART;
+  }
 }

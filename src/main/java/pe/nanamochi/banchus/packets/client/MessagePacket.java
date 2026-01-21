@@ -10,17 +10,17 @@ import pe.nanamochi.banchus.packets.Packets;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MessagePacket implements Packet {
-    private String sender;
-    private String content;
-    private String target;
-    private int senderId;
+  private String sender;
+  private String content;
+  private String target;
+  private int senderId;
 
-    @Override
-    public Packets getPacketType() {
-        return Packets.OSU_MESSAGE;
-    }
+  @Override
+  public Packets getPacketType() {
+    return Packets.OSU_MESSAGE;
+  }
 
-    public boolean isDirectMessage() {
-        return !this.target.startsWith("#");
-    }
+  public boolean isDirectMessage() {
+    return !this.target.startsWith("#");
+  }
 }

@@ -10,10 +10,10 @@ import pe.nanamochi.banchus.packets.Packets;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AnnouncePacket implements Packet {
-    private String message;
+  private String message;
 
-    @Override
-    public Packets getPacketType() {
-        return Packets.BANCHO_ANNOUNCE;
-    }
+  @Override
+  public Packets getPacketType() {
+    return Packets.BANCHO_ANNOUNCE;
+  }
 }

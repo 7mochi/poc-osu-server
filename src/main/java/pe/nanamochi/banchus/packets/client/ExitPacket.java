@@ -8,8 +8,8 @@ import pe.nanamochi.banchus.packets.Packets;
 @Data
 @NoArgsConstructor
 public class ExitPacket implements Packet {
-    @Override
-    public Packets getPacketType() {
-        return Packets.OSU_EXIT;
-    }
+  @Override
+  public Packets getPacketType() {
+    return Packets.OSU_EXIT;
+  }
 }

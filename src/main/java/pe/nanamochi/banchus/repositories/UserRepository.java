@@ -6,7 +6,9 @@ import pe.nanamochi.banchus.entities.db.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
-    User findByUsername(String username);
-    User findByEmail(String email);
-    User findByUsernameAndPasswordMd5(String username, String password);
+  User findByUsername(String username);
+
+  User findByEmail(String email);
+
+  User findByUsernameAndPasswordMd5(String username, String password);
 }

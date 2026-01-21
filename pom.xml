@@ -25,7 +25,11 @@
 	<url/>
 
 	<licenses>
-		<license/>
+		<license>
+			<name>MIT License</name>
+			<url>http://www.opensource.org/licenses/mit-license.php</url>
+			<distribution>repo</distribution>
+		</license>
 	</licenses>
 
 	<developers>

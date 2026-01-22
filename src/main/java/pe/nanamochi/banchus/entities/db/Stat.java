@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.ColumnDefault;
+import pe.nanamochi.banchus.entities.Mode;
 
 @Entity
 @Data
@@ -13,11 +13,10 @@ import org.hibernate.annotations.ColumnDefault;
 public class Stat {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @ColumnDefault("1")
   private int id;
 
   @ManyToOne private User user;
-  private int gamemode;
+  private Mode gamemode;
   private int totalScore;
   private int rankedScore;
   private int performancePoints;

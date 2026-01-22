@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import pe.nanamochi.banchus.entities.Mode;
 import pe.nanamochi.banchus.entities.db.Stat;
 import pe.nanamochi.banchus.entities.db.User;
 import pe.nanamochi.banchus.repositories.StatRepository;
@@ -22,13 +23,13 @@ public class StatService {
     for (int i = 0; i < 4; i++) {
       Stat stat = new Stat();
       stat.setUser(user);
-      stat.setGamemode(i);
+      stat.setGamemode(Mode.fromValue(i));
       stats.add(statRepository.save(stat));
     }
     return stats;
   }
 
-  public Stat getStats(User user, int gamemode) {
+  public Stat getStats(User user, Mode gamemode) {
     return statRepository.findByUserAndGamemode(user, gamemode);
   }
 }

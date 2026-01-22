@@ -2,15 +2,14 @@ package pe.nanamochi.banchus.entities.db;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Data
 @Table(name = "users")
 public class User {
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @ColumnDefault("3")
+  @SequenceGenerator(name = "user_seq", initialValue = 3, allocationSize = 1)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq")
   private int id;
 
   private String username;

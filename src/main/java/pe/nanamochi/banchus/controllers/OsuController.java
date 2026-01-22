@@ -21,9 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
-import pe.nanamochi.banchus.entities.CountryCode;
-import pe.nanamochi.banchus.entities.Geolocation;
-import pe.nanamochi.banchus.entities.LoginData;
+import pe.nanamochi.banchus.entities.*;
 import pe.nanamochi.banchus.entities.db.Session;
 import pe.nanamochi.banchus.entities.db.Stat;
 import pe.nanamochi.banchus.entities.db.User;
@@ -32,6 +30,7 @@ import pe.nanamochi.banchus.packets.PacketHandler;
 import pe.nanamochi.banchus.packets.PacketReader;
 import pe.nanamochi.banchus.packets.PacketWriter;
 import pe.nanamochi.banchus.packets.server.*;
+import pe.nanamochi.banchus.services.PacketBundleService;
 import pe.nanamochi.banchus.services.SessionService;
 import pe.nanamochi.banchus.services.StatService;
 import pe.nanamochi.banchus.services.UserService;
@@ -56,6 +55,8 @@ public class OsuController {
   @Autowired private SessionService sessionService;
 
   @Autowired private StatService statService;
+
+  @Autowired private PacketBundleService packetBundleService;
 
   @PostMapping(value = "/", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<Resource> banchoHandler(
@@ -109,71 +110,198 @@ public class OsuController {
     }
 
     if (user != null) {
-      Session session = new Session();
-      session.setUser(user);
-      session.setUtcOffset(Integer.parseInt(loginData.getUtcOffset()));
-      session.setGamemode(0);
-      session.setCountry(geolocation.getCountryCode().toLowerCase());
-      session.setLatitude(geolocation.getLat());
-      session.setLongitude(geolocation.getLon());
-      session.setDisplayCityLocation(Boolean.parseBoolean(loginData.getDisplayCity()));
-      session.setAction(0);
-      session.setInfoText("");
-      session.setBeatmapMd5("");
-      session.setBeatmapId(0);
-      session.setMods(0); // TODO: implement mods enum
-      session.setPmPrivate(Boolean.parseBoolean(loginData.getPmPrivate()));
-      session.setReceiveMatchUpdates(false);
-      session.setSpectatorHostSessionId(null);
-      session.setAwayMessage("");
-      session.setMultiplayerMatchId(0); // TODO: idk if this is the correct value
-      session.setLastCommunicatedAt(Instant.now());
-      session.setLastNpBeatmapId(0); // TODO: Idk if this is the correct value
-      session.setPrimarySession(true); // TODO: support multiple sessions for tournament client
-      session.setOsuVersion(loginData.getOsuVersion());
-      session.setOsuPathMd5(loginData.getOsuPathMd5());
-      session.setAdaptersStr(loginData.getAdaptersStr());
-      session.setAdaptersMd5(loginData.getAdaptersMd5());
-      session.setUninstallMd5(loginData.getUninstallMd5());
-      session.setDiskSignatureMd5(loginData.getDiskSignatureMd5());
-      session = sessionService.saveSession(session);
+      Session otherOwnOsuSession =
+          sessionService.getPrimarySessionByUsername(loginData.getUsername());
 
-      Stat ownStats = statService.getStats(user, 0); // Standard mode stats
+      Session ownOsuSession = new Session();
+      ownOsuSession.setUser(user);
+      ownOsuSession.setUtcOffset(Integer.parseInt(loginData.getUtcOffset()));
+      ownOsuSession.setGamemode(Mode.OSU);
+      ownOsuSession.setCountry(geolocation.getCountryCode().toLowerCase());
+      ownOsuSession.setLatitude(geolocation.getLat());
+      ownOsuSession.setLongitude(geolocation.getLon());
+      ownOsuSession.setDisplayCityLocation(Boolean.parseBoolean(loginData.getDisplayCity()));
+      ownOsuSession.setAction(0);
+      ownOsuSession.setInfoText("");
+      ownOsuSession.setBeatmapMd5("");
+      ownOsuSession.setBeatmapId(0);
+      ownOsuSession.setMods(Mods.toBitmask(List.of(Mods.NO_MOD)));
+      ownOsuSession.setPmPrivate(Boolean.parseBoolean(loginData.getPmPrivate()));
+      ownOsuSession.setReceiveMatchUpdates(false);
+      ownOsuSession.setSpectatorHostSessionId(null);
+      ownOsuSession.setAwayMessage("");
+      ownOsuSession.setMultiplayerMatchId(-1);
+      ownOsuSession.setLastCommunicatedAt(Instant.now());
+      ownOsuSession.setLastNpBeatmapId(-1);
+      ownOsuSession.setPrimarySession(
+          otherOwnOsuSession == null || loginData.getOsuVersion().endsWith("tourney"));
+      ownOsuSession.setOsuVersion(loginData.getOsuVersion());
+      ownOsuSession.setOsuPathMd5(loginData.getOsuPathMd5());
+      ownOsuSession.setAdaptersStr(loginData.getAdaptersStr());
+      ownOsuSession.setAdaptersMd5(loginData.getAdaptersMd5());
+      ownOsuSession.setUninstallMd5(loginData.getUninstallMd5());
+      ownOsuSession.setDiskSignatureMd5(loginData.getDiskSignatureMd5());
+      ownOsuSession = sessionService.saveSession(ownOsuSession);
 
+      Stat ownStats = statService.getStats(user, ownOsuSession.getGamemode());
+
+      if (ownStats == null) {
+        packetWriter.writePacket(stream, new LoginReplyPacket(-1));
+        packetWriter.writePacket(stream, new AnnouncePacket("Own stats not found."));
+
+        responseHeaders.add("cho-token", "no");
+        return ResponseEntity.ok()
+            .headers(responseHeaders)
+            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+            .body(new ByteArrayResource(stream.toByteArray()));
+      }
+
+      // Protocol version negotiation
       packetWriter.writePacket(stream, new ProtocolNegotiationPacket());
+
+      // Login reply
       packetWriter.writePacket(stream, new LoginReplyPacket(user.getId()));
-      packetWriter.writePacket(stream, new AnnouncePacket("Welcome to Banchus!"));
+
+      // TODO: Write privileges packet
+
+      // TODO: Write osu chat channels packet
+
+      // Notify the client that we're done sending channel info
+      packetWriter.writePacket(stream, new ChannelInfoCompletePacket());
+
+      // Send our presence and stats to ourselves
       packetWriter.writePacket(
           stream,
           new UserPresencePacket(
               user.getId(),
               user.getUsername(),
-              session.getUtcOffset(),
-              CountryCode.fromCode(session.getCountry()).id(),
+              ownOsuSession.getUtcOffset(),
+              CountryCode.fromCode(ownOsuSession.getCountry()).id(),
               0, // TODO: permissions
-              session.getLatitude(),
-              session.getLongitude(),
+              ownOsuSession.getLatitude(),
+              ownOsuSession.getLongitude(),
               727 // TODO: global rank
               ));
       packetWriter.writePacket(
           stream,
           new UserStatsPacket(
               user.getId(),
-              session.getAction(),
-              session.getInfoText(),
-              session.getBeatmapMd5(),
-              session.getMods(),
-              session.getGamemode(),
-              session.getBeatmapId(),
+              ownOsuSession.getAction(),
+              ownOsuSession.getInfoText(),
+              ownOsuSession.getBeatmapMd5(),
+              ownOsuSession.getMods(),
+              ownOsuSession.getGamemode(),
+              ownOsuSession.getBeatmapId(),
               ownStats.getRankedScore(),
               ownStats.getAccuracy(),
               ownStats.getPlayCount(),
               ownStats.getTotalScore(),
               727, // TODO: global rank
               ownStats.getPerformancePoints()));
-      packetWriter.writePacket(stream, new ChannelInfoCompletePacket());
 
-      choToken = session.getId().toString();
+      for (Session otherOsuSession : sessionService.getAllSessions()) {
+        if (otherOsuSession.getId().equals(ownOsuSession.getId())) {
+          continue;
+        }
+
+        // TODO: Get other session's global rank
+
+        Stat otherStats =
+            statService.getStats(otherOsuSession.getUser(), otherOsuSession.getGamemode());
+
+        if (otherStats == null) {
+          packetWriter.writePacket(stream, new LoginReplyPacket(-1));
+          packetWriter.writePacket(stream, new AnnouncePacket("Other user's stats not found."));
+
+          responseHeaders.add("cho-token", "no");
+          return ResponseEntity.ok()
+              .headers(responseHeaders)
+              .contentType(MediaType.APPLICATION_OCTET_STREAM)
+              .body(new ByteArrayResource(stream.toByteArray()));
+        }
+
+        // Send the other user's presence and stats to us
+        packetWriter.writePacket(
+            stream,
+            new UserPresencePacket(
+                otherOsuSession.getUser().getId(),
+                otherOsuSession.getUser().getUsername(),
+                otherOsuSession.getUtcOffset(),
+                CountryCode.fromCode(otherOsuSession.getCountry()).id(),
+                0, // TODO: permissions
+                otherOsuSession.getLatitude(),
+                otherOsuSession.getLongitude(),
+                727 // TODO: global rank
+                ));
+        packetWriter.writePacket(
+            stream,
+            new UserStatsPacket(
+                otherStats.getUser().getId(),
+                otherOsuSession.getAction(),
+                otherOsuSession.getInfoText(),
+                otherOsuSession.getBeatmapMd5(),
+                otherOsuSession.getMods(),
+                otherOsuSession.getGamemode(),
+                otherOsuSession.getBeatmapId(),
+                otherStats.getRankedScore(),
+                otherStats.getAccuracy(),
+                otherStats.getPlayCount(),
+                otherStats.getTotalScore(),
+                727, // TODO: global rank
+                otherStats.getPerformancePoints()));
+
+        // Send our presence and stats to the other user
+        ByteArrayOutputStream otherStream = new ByteArrayOutputStream();
+        packetWriter.writePacket(
+            otherStream,
+            new UserPresencePacket(
+                user.getId(),
+                user.getUsername(),
+                ownOsuSession.getUtcOffset(),
+                CountryCode.fromCode(ownOsuSession.getCountry()).id(),
+                0, // TODO: permissions
+                ownOsuSession.getLatitude(),
+                ownOsuSession.getLongitude(),
+                727 // TODO: global rank
+                ));
+        packetWriter.writePacket(
+            otherStream,
+            new UserStatsPacket(
+                user.getId(),
+                ownOsuSession.getAction(),
+                ownOsuSession.getInfoText(),
+                ownOsuSession.getBeatmapMd5(),
+                ownOsuSession.getMods(),
+                ownOsuSession.getGamemode(),
+                ownOsuSession.getBeatmapId(),
+                ownStats.getRankedScore(),
+                ownStats.getAccuracy(),
+                ownStats.getPlayCount(),
+                ownStats.getTotalScore(),
+                727, // TODO: global rank
+                ownStats.getPerformancePoints()));
+        packetBundleService.enqueue(
+            otherOsuSession.getId(), new PacketBundle(otherStream.toByteArray()));
+      }
+
+      // Welcome notification
+      packetWriter.writePacket(stream, new AnnouncePacket("Welcome to Banchus!"));
+
+      // TODO: Check if the player is silenced and send the appropriate packet
+
+      // TODO: Check privileges to see if the players is restricted and send the appropriate packet
+
+      // TODO: Send friendlist packet
+
+      // TODO: Send main menu icon packet
+
+      choToken = ownOsuSession.getId().toString();
+
+      logger.info(
+          "User '{}' logged in successfully from IP {} ({})",
+          loginData.getUsername(),
+          ipAddress.getHostAddress(),
+          geolocation.getCountryCode());
     } else {
       packetWriter.writePacket(stream, new LoginReplyPacket(-1));
       packetWriter.writePacket(stream, new AnnouncePacket("Invalid username or password."));
@@ -207,10 +335,19 @@ public class OsuController {
           .body(new ByteArrayResource(stream.toByteArray()));
     }
 
-    // Read packets from request body
+    session.setLastCommunicatedAt(Instant.now());
+    sessionService.updateSession(session);
+
+    // Read packets from request body and handle them
     List<Packet> packets = packetReader.readPackets(data);
     for (Packet packet : packets) {
       packetHandler.handlePacket(packet, session, stream);
+    }
+
+    // Dequeue all packets to send back to the client
+    List<PacketBundle> ownPacketBundles = packetBundleService.dequeueAll(session.getId());
+    for (PacketBundle packetBundle : ownPacketBundles) {
+      stream.write(packetBundle.getData());
     }
 
     responseHeaders.add("cho-token", session.getId().toString());

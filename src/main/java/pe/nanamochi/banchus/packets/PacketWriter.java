@@ -28,6 +28,7 @@ public class PacketWriter {
       case BANCHO_PROTOCOL_NEOGITIATION -> write(stream, (ProtocolNegotiationPacket) packet);
       case BANCHO_USER_PRESENCE -> write(stream, (UserPresencePacket) packet);
       case BANCHO_USER_STATS -> write(stream, (UserStatsPacket) packet);
+      case BANCHO_USER_QUIT -> write(stream, (UserQuitPacket) packet);
       case BANCHO_RESTART -> write(stream, (RestartPacket) packet);
       case BANCHO_CHANNEL_INFO_COMPLETE -> write(stream, (ChannelInfoCompletePacket) packet);
       case BANCHO_PING -> write(stream, (PingPacket) packet);
@@ -85,7 +86,7 @@ public class PacketWriter {
     writer.writeString(buffer, packet.getInfoText());
     writer.writeString(buffer, packet.getBeatmapMd5());
     writer.writeUint32(buffer, packet.getMods());
-    writer.writeUint8(buffer, packet.getGamemode());
+    writer.writeUint8(buffer, packet.getGamemode().getValue());
     writer.writeInt32(buffer, packet.getBeatmapId());
     writer.writeUint64(buffer, packet.getRankedScore());
     writer.writeFloat32(buffer, packet.getAccuracy());
@@ -94,6 +95,13 @@ public class PacketWriter {
     writer.writeUint32(buffer, packet.getGlobalRank());
     writer.writeUint16(buffer, packet.getPerformancePoints());
     writeRawPacket(stream, Packets.BANCHO_USER_STATS, buffer.toByteArray());
+  }
+
+  private void write(OutputStream stream, UserQuitPacket packet) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeInt32(buffer, packet.getUserId());
+    writer.writeUint8(buffer, packet.getState().getValue());
+    writeRawPacket(stream, Packets.BANCHO_USER_QUIT, buffer.toByteArray());
   }
 
   private void write(OutputStream stream, RestartPacket packet) throws IOException {

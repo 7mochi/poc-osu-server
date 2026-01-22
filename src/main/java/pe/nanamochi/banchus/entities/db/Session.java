@@ -1,6 +1,7 @@
 package pe.nanamochi.banchus.entities.db;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import java.time.Instant;
@@ -10,11 +11,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import pe.nanamochi.banchus.entities.Mode;
 
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class Session {
   @Id
   @JdbcTypeCode(SqlTypes.VARCHAR)
@@ -22,7 +27,7 @@ public class Session {
 
   @ManyToOne private User user;
   private int utcOffset;
-  private int gamemode;
+  private Mode gamemode;
   private String country;
   private float latitude;
   private float longitude;
@@ -46,4 +51,5 @@ public class Session {
   private String adaptersMd5;
   private String uninstallMd5;
   private String diskSignatureMd5;
+  @CreatedDate private Instant createdAt;
 }

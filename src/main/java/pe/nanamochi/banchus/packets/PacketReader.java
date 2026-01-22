@@ -67,7 +67,6 @@ public class PacketReader {
   }
 
   public ExitPacket readUserExit(InputStream stream) {
-    // TODO: idk
     return new ExitPacket();
   }
 

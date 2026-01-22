@@ -85,4 +85,17 @@ public enum Mods {
     }
     return bitmask;
   }
+
+  public static List<Mods> filterInvalidModCombinations(List<Mods> mods, Mode mode) {
+    List<Mods> filteredMods = new ArrayList<>(mods);
+
+    if (mode == Mode.MANIA && mods.contains(RELAX)) {
+      filteredMods.remove(RELAX);
+    } else if ((mode == Mode.TAIKO || mode == Mode.CATCH || mode == Mode.MANIA)
+        && mods.contains(AUTOPILOT)) {
+      filteredMods.remove(AUTOPILOT);
+    }
+
+    return filteredMods;
+  }
 }

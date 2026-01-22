@@ -3,6 +3,7 @@ package pe.nanamochi.banchus.packets.server;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import pe.nanamochi.banchus.entities.Mode;
 import pe.nanamochi.banchus.packets.Packet;
 import pe.nanamochi.banchus.packets.Packets;
 
@@ -15,7 +16,7 @@ public class UserStatsPacket implements Packet {
   private String infoText;
   private String beatmapMd5;
   private int mods;
-  private int gamemode;
+  private Mode gamemode;
   private int beatmapId;
   private long rankedScore;
   private float accuracy;

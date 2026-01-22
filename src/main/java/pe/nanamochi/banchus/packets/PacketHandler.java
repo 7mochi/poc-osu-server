@@ -1,21 +1,36 @@
 package pe.nanamochi.banchus.packets;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import pe.nanamochi.banchus.entities.Mods;
+import pe.nanamochi.banchus.entities.PacketBundle;
+import pe.nanamochi.banchus.entities.QuitState;
 import pe.nanamochi.banchus.entities.db.Session;
+import pe.nanamochi.banchus.entities.db.Stat;
 import pe.nanamochi.banchus.packets.client.*;
+import pe.nanamochi.banchus.packets.server.UserQuitPacket;
+import pe.nanamochi.banchus.packets.server.UserStatsPacket;
+import pe.nanamochi.banchus.services.PacketBundleService;
+import pe.nanamochi.banchus.services.SessionService;
+import pe.nanamochi.banchus.services.StatService;
 
 @Component
 public class PacketHandler {
 
   private static final Logger logger = LoggerFactory.getLogger(PacketHandler.class);
-
   @Autowired private PacketWriter packetWriter;
+  @Autowired private SessionService sessionService;
+  @Autowired private StatService statService;
+  @Autowired private PacketBundleService packetBundleService;
 
-  public void handlePacket(Packet packet, Session session, ByteArrayOutputStream responseStream) {
+  public void handlePacket(Packet packet, Session session, ByteArrayOutputStream responseStream)
+      throws IOException {
     logger.debug("Handling packet: {}", packet.getPacketType());
 
     switch (packet.getPacketType()) {
@@ -36,13 +51,82 @@ public class PacketHandler {
   }
 
   private void handleUserStatus(
-      UserStatusPacket packet, Session session, ByteArrayOutputStream responseStream) {}
+      UserStatusPacket packet, Session session, ByteArrayOutputStream responseStream)
+      throws IOException {
+    // TODO: Check privileges
+
+    // Filter invalid mod combinations, this is a quirk of the osu! client,
+    // where it adjusts this value only after it sends the packet to the server,
+    // so we need to adjust
+    packet.setMods(Mods.filterInvalidModCombinations(packet.getMods(), packet.getMode()));
+
+    session.setAction(packet.getAction().getValue());
+    session.setInfoText(packet.getText());
+    session.setBeatmapMd5(packet.getBeatmapChecksum());
+    session.setMods(Mods.toBitmask(packet.getMods()));
+    session.setGamemode(packet.getMode());
+    session.setBeatmapId(packet.getBeatmapId());
+    session = sessionService.updateSession(session);
+
+    // TODO: Calculate global rank
+
+    Stat ownStats = statService.getStats(session.getUser(), packet.getMode());
+
+    // Send the stats update to all active osu sessions
+    for (Session otherSession : sessionService.getAllSessions()) {
+      ByteArrayOutputStream stream = new ByteArrayOutputStream();
+      packetWriter.writePacket(
+          stream,
+          new UserStatsPacket(
+              session.getUser().getId(),
+              session.getAction(),
+              session.getInfoText(),
+              session.getBeatmapMd5(),
+              session.getMods(),
+              session.getGamemode(),
+              session.getBeatmapId(),
+              ownStats.getRankedScore(),
+              ownStats.getAccuracy(),
+              ownStats.getPlayCount(),
+              ownStats.getTotalScore(),
+              727, // TODO: global rank
+              ownStats.getPerformancePoints()));
+      packetBundleService.enqueue(otherSession.getId(), new PacketBundle(stream.toByteArray()));
+    }
+  }
 
   private void handleMessage(
       MessagePacket packet, Session session, ByteArrayOutputStream responseStream) {}
 
-  private void handleExit(
-      ExitPacket packet, Session session, ByteArrayOutputStream responseStream) {}
+  private void handleExit(ExitPacket packet, Session session, ByteArrayOutputStream responseStream)
+      throws IOException {
+    // The osu! client will often attempt to logout as soon as they login,
+    // this is a quirk of the client, and we don't really want to log them out;
+    // so we ignore this case if it's been < 1 second since the client's login
+    if (Duration.between(session.getCreatedAt(), Instant.now()).compareTo(Duration.ofSeconds(1))
+        < 0) {
+      return;
+    }
+
+    session = sessionService.deleteSession(session);
+
+    // TODO: Leave channels the osu session is in
+
+    // TODO: Spectator
+
+    // TODO: Multiplayer
+
+    // Tell everyone else we logout
+    // TODO: Only do this if our privileges allow it (unrestricted)
+    for (Session otherOsuSession : sessionService.getAllSessions()) {
+      ByteArrayOutputStream stream = new ByteArrayOutputStream();
+      packetWriter.writePacket(
+          stream, new UserQuitPacket(session.getUser().getId(), QuitState.GONE));
+      packetBundleService.enqueue(otherOsuSession.getId(), new PacketBundle(stream.toByteArray()));
+    }
+
+    logger.info("User {} has logged out.", session.getUser().getUsername());
+  }
 
   private void handleStatusUpdateRequest(
       StatusUpdateRequestPacket packet, Session session, ByteArrayOutputStream responseStream) {}

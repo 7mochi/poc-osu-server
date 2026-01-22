@@ -1,23 +1,25 @@
+server:
+    port: ${APPLICATION_PORT:8080}
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
-    name: banchus
+    name: ${APPLICATION_NAME}
   datasource:
-    url: jdbc:mariadb://localhost:3306/banchus
-    username: root
-    password: root
+    url: jdbc:mariadb://${DATABASE_HOST:localhost}:${DATABASE_PORT:3306}/${DATABASE_NAME}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: org.mariadb.jdbc.Driver
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      password: ${REDIS_PASSWORD:}
+      port: ${REDIS_PORT:6379}
   jpa:
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MariaDBDialect
     hibernate:
-      ddl-auto: create
+      ddl-auto: ${JPA_HIBERNATE_DDL_AUTO:update}
 
 logging:
   level:
-    root: WARN
-    pe.nanamochi.banchus: DEBUG
+    root: ${LOG_LEVEL_ROOT:INFO}
+    pe.nanamochi.banchus: ${LOG_LEVEL_BANCHUS:WARN}

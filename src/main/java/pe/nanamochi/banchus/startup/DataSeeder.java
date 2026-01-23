@@ -2,6 +2,7 @@ package pe.nanamochi.banchus.startup;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import pe.nanamochi.banchus.entities.CountryCode;
 import pe.nanamochi.banchus.entities.db.User;
 import pe.nanamochi.banchus.repositories.UserRepository;
 import pe.nanamochi.banchus.services.StatService;
@@ -24,7 +25,8 @@ public class DataSeeder implements CommandLineRunner {
       user.setUsername("test");
       user.setEmail("test@gmail.com");
       user.setPasswordMd5("098f6bcd4621d373cade4e832627b4f6"); // test
-      user.setCountry(169); // 169 -> PE
+      user.setCountry(CountryCode.KP);
+      user.setRestricted(false);
 
       userRepository.save(user);
       statService.createAllGamemodes(user);
@@ -33,7 +35,8 @@ public class DataSeeder implements CommandLineRunner {
       user2.setUsername("test2");
       user2.setEmail("test2@gmail.com");
       user2.setPasswordMd5("098f6bcd4621d373cade4e832627b4f6"); // test
-      user2.setCountry(169); // 169 -> PE
+      user2.setCountry(CountryCode.AR);
+      user2.setRestricted(true);
 
       userRepository.save(user2);
       statService.createAllGamemodes(user2);

@@ -32,10 +32,20 @@ public class PacketWriter {
       case BANCHO_RESTART -> write(stream, (RestartPacket) packet);
       case BANCHO_CHANNEL_INFO_COMPLETE -> write(stream, (ChannelInfoCompletePacket) packet);
       case BANCHO_PING -> write(stream, (PingPacket) packet);
+      case BANCHO_ACCOUNT_RESTRICTED -> write(stream, (AccountRestrictedPacket) packet);
+      case BANCHO_TARGET_IS_SILENCED -> write(stream, (TargetIsSilencedPacket) packet);
+      case BANCHO_MESSAGE -> write(stream, (MessagePacket) packet);
+      case BANCHO_SILENCE_INFO -> write(stream, (SilenceInfoPacket) packet);
       default ->
           throw new UnsupportedOperationException(
               "Cannot write packet type: " + packet.getPacketType());
     }
+  }
+
+  private void write(OutputStream stream, SilenceInfoPacket packet) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeInt32(buffer, packet.getSilenceLength());
+    writeRawPacket(stream, Packets.BANCHO_SILENCE_INFO, buffer.toByteArray());
   }
 
   private void writeRawPacket(OutputStream stream, Packets packetType, byte[] data)
@@ -116,5 +126,24 @@ public class PacketWriter {
 
   private void write(OutputStream stream, PingPacket packet) throws IOException {
     writeRawPacket(stream, Packets.BANCHO_PING, new byte[0]);
+  }
+
+  private void write(OutputStream stream, MessagePacket packet) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeString(buffer, packet.getSender());
+    writer.writeString(buffer, packet.getContent());
+    writer.writeString(buffer, packet.getTarget());
+    writer.writeInt32(buffer, packet.getSenderId());
+
+    writeRawPacket(stream, Packets.BANCHO_MESSAGE, buffer.toByteArray());
+  }
+
+  private void write(OutputStream stream, TargetIsSilencedPacket packet) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    write(buffer, new MessagePacket("", "", packet.getUsername(), -1));
+  }
+
+  private void write(OutputStream stream, AccountRestrictedPacket packet) throws IOException {
+    writeRawPacket(stream, Packets.BANCHO_ACCOUNT_RESTRICTED, new byte[0]);
   }
 }

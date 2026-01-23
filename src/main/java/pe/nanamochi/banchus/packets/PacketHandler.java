@@ -31,22 +31,25 @@ public class PacketHandler {
 
   public void handlePacket(Packet packet, Session session, ByteArrayOutputStream responseStream)
       throws IOException {
-    logger.debug("Handling packet: {}", packet.getPacketType());
+    if (packet != null) {
+      logger.debug("Handling packet: {}", packet.getPacketType());
 
-    switch (packet.getPacketType()) {
-      case OSU_USER_STATUS -> handleUserStatus((UserStatusPacket) packet, session, responseStream);
-      case OSU_MESSAGE -> handleMessage((MessagePacket) packet, session, responseStream);
-      case OSU_EXIT -> handleExit((ExitPacket) packet, session, responseStream);
-      case OSU_STATUS_UPDATE_REQUEST ->
-          handleStatusUpdateRequest((StatusUpdateRequestPacket) packet, session, responseStream);
-      case OSU_PONG -> handlePong((PongPacket) packet, session, responseStream);
-      case OSU_PRIVATE_MESSAGE ->
-          handlePrivateMessage((PrivateMessagePacket) packet, session, responseStream);
-      case OSU_RECEIVE_UPDATES ->
-          handleReceiveUpdates((ReceiveUpdatesPacket) packet, session, responseStream);
-      case OSU_USER_STATS_REQUEST ->
-          handleUserStatsRequest((UserStatsRequestPacket) packet, session, responseStream);
-      default -> logger.warn("Packet {} not implemented yet.", packet.getPacketType());
+      switch (packet.getPacketType()) {
+        case OSU_USER_STATUS ->
+            handleUserStatus((UserStatusPacket) packet, session, responseStream);
+        case OSU_MESSAGE -> handleMessage((MessagePacket) packet, session, responseStream);
+        case OSU_EXIT -> handleExit((ExitPacket) packet, session, responseStream);
+        case OSU_STATUS_UPDATE_REQUEST ->
+            handleStatusUpdateRequest((StatusUpdateRequestPacket) packet, session, responseStream);
+        case OSU_PONG -> handlePong((PongPacket) packet, session, responseStream);
+        case OSU_PRIVATE_MESSAGE ->
+            handlePrivateMessage((PrivateMessagePacket) packet, session, responseStream);
+        case OSU_RECEIVE_UPDATES ->
+            handleReceiveUpdates((ReceiveUpdatesPacket) packet, session, responseStream);
+        case OSU_USER_STATS_REQUEST ->
+            handleUserStatsRequest((UserStatsRequestPacket) packet, session, responseStream);
+        default -> logger.warn("Packet {} not implemented yet.", packet.getPacketType());
+      }
     }
   }
 

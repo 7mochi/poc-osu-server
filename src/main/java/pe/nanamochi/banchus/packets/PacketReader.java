@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import pe.nanamochi.banchus.entities.*;
 import pe.nanamochi.banchus.io.data.BanchoDataReader;
@@ -13,6 +15,8 @@ import pe.nanamochi.banchus.packets.client.*;
 
 @Component
 public class PacketReader {
+
+  private static final Logger logger = LoggerFactory.getLogger(PacketReader.class);
 
   private final IDataReader reader;
 
@@ -50,7 +54,8 @@ public class PacketReader {
     } else if (packetId == Packets.OSU_USER_STATS_REQUEST.getId()) {
       return readUserStatsRequest(stream);
     } else {
-      throw new UnsupportedOperationException("Packet id " + packetId + " not supported yet.");
+      logger.warn("Packet id {} not supported yet.", packetId);
+      return null;
     }
   }
 

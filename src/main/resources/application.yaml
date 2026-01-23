@@ -23,3 +23,8 @@ logging:
   level:
     root: ${LOG_LEVEL_ROOT:INFO}
     pe.nanamochi.banchus: ${LOG_LEVEL_BANCHUS:WARN}
+
+banchus:
+  menu-icon:
+    image-url: ${MENU_ICON_IMAGE_URL}
+    redirect-url: ${MENU_ICON_REDIRECT_URL}

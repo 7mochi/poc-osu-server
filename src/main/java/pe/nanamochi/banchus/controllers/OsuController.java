@@ -318,8 +318,6 @@ public class OsuController {
 
       // TODO: Send friendlist packet
 
-      // TODO: Send main menu icon packet
-
       choToken = ownOsuSession.getId().toString();
 
       logger.info(

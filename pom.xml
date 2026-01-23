@@ -18,7 +18,7 @@
 
 	<groupId>pe.nanamochi</groupId>
 	<artifactId>banchus</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>banchus</name>
 	<description>osu! Server</description>
 
@@ -90,6 +90,10 @@
 	</dependencies>
 
 	<build>
+		<!--suppress UnresolvedMavenProperty -->
+		<finalName>
+			${project.artifactId}-${project.version}-${git.commit.id.abbrev}
+		</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -176,6 +180,25 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>io.github.git-commit-id</groupId>
+				<artifactId>git-commit-id-maven-plugin</artifactId>
+				<version>9.0.2</version>
+				<executions>
+					<execution>
+						<id>get-the-git-infos</id>
+						<goals>
+							<goal>revision</goal>
+						</goals>
+						<phase>initialize</phase>
+					</execution>
+				</executions>
+				<configuration>
+					<generateGitPropertiesFile>true</generateGitPropertiesFile>
+					<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+					<commitIdGenerationMode>full</commitIdGenerationMode>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

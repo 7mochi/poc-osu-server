@@ -33,4 +33,11 @@ public class UserService {
     user.setCountry(country);
     return userRepository.save(user);
   }
+
+  public User updateUser(User user) {
+    if (!userRepository.existsById(user.getId())) {
+      throw new IllegalArgumentException("User not found: " + user.getUsername());
+    }
+    return userRepository.save(user);
+  }
 }

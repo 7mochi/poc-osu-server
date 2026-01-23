@@ -1,6 +1,7 @@
 package pe.nanamochi.banchus.entities.db;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import lombok.*;
 
 @Entity
@@ -17,4 +18,5 @@ public class User {
   private String passwordMd5;
   private int country;
   private int privileges;
+  private Instant silenceEnd;
 }

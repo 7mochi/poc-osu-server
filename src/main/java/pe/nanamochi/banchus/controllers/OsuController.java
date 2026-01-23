@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -286,7 +287,18 @@ public class OsuController {
       // Welcome notification
       packetWriter.writePacket(stream, new AnnouncePacket("Welcome to Banchus!"));
 
-      // TODO: Check if the player is silenced and send the appropriate packet
+      // Check if the player is silenced
+      if (user.getSilenceEnd() != null) {
+        long secondsRemainingSilence =
+            Duration.between(Instant.now(), user.getSilenceEnd()).toSeconds();
+        if (secondsRemainingSilence > 0) {
+          packetWriter.writePacket(
+              stream, new SilenceInfoPacket(Math.toIntExact(secondsRemainingSilence)));
+        } else {
+          user.setSilenceEnd(null);
+          user = userService.updateUser(user);
+        }
+      }
 
       // TODO: Check privileges to see if the players is restricted and send the appropriate packet
 

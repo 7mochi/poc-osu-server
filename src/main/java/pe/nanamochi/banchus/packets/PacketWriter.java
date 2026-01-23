@@ -32,10 +32,17 @@ public class PacketWriter {
       case BANCHO_RESTART -> write(stream, (RestartPacket) packet);
       case BANCHO_CHANNEL_INFO_COMPLETE -> write(stream, (ChannelInfoCompletePacket) packet);
       case BANCHO_PING -> write(stream, (PingPacket) packet);
+      case BANCHO_SILENCE_INFO -> write(stream, (SilenceInfoPacket) packet);
       default ->
           throw new UnsupportedOperationException(
               "Cannot write packet type: " + packet.getPacketType());
     }
+  }
+
+  private void write(OutputStream stream, SilenceInfoPacket packet) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeInt32(buffer, packet.getSilenceLength());
+    writeRawPacket(stream, Packets.BANCHO_SILENCE_INFO, buffer.toByteArray());
   }
 
   private void writeRawPacket(OutputStream stream, Packets packetType, byte[] data)

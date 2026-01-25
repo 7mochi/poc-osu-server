@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import pe.nanamochi.banchus.entities.*;
+import pe.nanamochi.banchus.entities.db.Channel;
 import pe.nanamochi.banchus.entities.db.Session;
 import pe.nanamochi.banchus.entities.db.Stat;
 import pe.nanamochi.banchus.entities.db.User;
@@ -31,11 +33,14 @@ import pe.nanamochi.banchus.packets.PacketHandler;
 import pe.nanamochi.banchus.packets.PacketReader;
 import pe.nanamochi.banchus.packets.PacketWriter;
 import pe.nanamochi.banchus.packets.server.*;
+import pe.nanamochi.banchus.services.ChannelMembersRedisService;
+import pe.nanamochi.banchus.services.ChannelService;
 import pe.nanamochi.banchus.services.PacketBundleService;
 import pe.nanamochi.banchus.services.SessionService;
 import pe.nanamochi.banchus.services.StatService;
 import pe.nanamochi.banchus.services.UserService;
 import pe.nanamochi.banchus.utils.IPApi;
+import pe.nanamochi.banchus.utils.PrivilegesUtil;
 import pe.nanamochi.banchus.utils.Security;
 import pe.nanamochi.banchus.utils.Validation;
 
@@ -58,7 +63,11 @@ public class OsuController {
 
   @Autowired private StatService statService;
 
+  @Autowired private ChannelService channelService;
+
   @Autowired private PacketBundleService packetBundleService;
+
+  @Autowired private ChannelMembersRedisService channelMembersRedisService;
 
   @PostMapping(value = "/", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<Resource> banchoHandler(
@@ -164,8 +173,26 @@ public class OsuController {
       packetWriter.writePacket(stream, new LoginReplyPacket(user.getId()));
 
       // TODO: Write privileges packet
+      if (!PrivilegesUtil.has(user.getPrivileges(), Privileges.VERIFIED)) {
+          user.setPrivileges(PrivilegesUtil.add(user.getPrivileges(), Privileges.VERIFIED));
+          userService.updateUser(user);
+
+          packetWriter.writePacket(stream, new LoginPermissionsPacket(user.getPrivileges()));
+      }
 
       // TODO: Write osu chat channels packet
+
+      // Autojoin to channels
+      List<Channel> autoJoinChannels = channelService.findByAutoJoinTrue();
+      for (Channel channel : autoJoinChannels) {
+          if (!channelService.canReadChannel(channel, user.getPrivileges())
+                  || channel.getName().equals("#lobby")) {
+              continue;
+          }
+
+          Set<UUID> currentChannelMembers = channelMembersRedisService.getMembers(channel.getId());
+          packetWriter.writePacket(stream, new ChannelAvailablePacket(channel.getName(), channel.getTopic(), currentChannelMembers.size()));
+      }
 
       // Notify the client that we're done sending channel info
       packetWriter.writePacket(stream, new ChannelInfoCompletePacket());

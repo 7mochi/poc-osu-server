@@ -36,6 +36,9 @@ public class PacketWriter {
       case BANCHO_TARGET_IS_SILENCED -> write(stream, (TargetIsSilencedPacket) packet);
       case BANCHO_MESSAGE -> write(stream, (MessagePacket) packet);
       case BANCHO_SILENCE_INFO -> write(stream, (SilenceInfoPacket) packet);
+      case BANCHO_CHANNEL_AVAILABLE -> write(stream, (ChannelAvailablePacket) packet);
+      case BANCHO_LOGIN_PERMISSIONS -> write(stream, (LoginPermissionsPacket) packet);
+      case BANCHO_CHANNEL_JOIN_SUCCESS -> write(stream, (ChannelJoinSuccessPacket) packet);
       default ->
           throw new UnsupportedOperationException(
               "Cannot write packet type: " + packet.getPacketType());
@@ -145,5 +148,26 @@ public class PacketWriter {
 
   private void write(OutputStream stream, AccountRestrictedPacket packet) throws IOException {
     writeRawPacket(stream, Packets.BANCHO_ACCOUNT_RESTRICTED, new byte[0]);
+  }
+
+  private void write(OutputStream stream, ChannelAvailablePacket packet) throws IOException {
+      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+      writer.writeString(buffer, packet.getRealName());
+      writer.writeString(buffer, packet.getTopic());
+      writer.writeInt32(buffer, packet.getUserCount());
+
+      writeRawPacket(stream, Packets.BANCHO_CHANNEL_AVAILABLE, buffer.toByteArray());
+  }
+
+  private void write(OutputStream stream, LoginPermissionsPacket packet) throws IOException {
+      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+      writer.writeInt32(buffer, packet.getPrivileges());
+      writeRawPacket(stream, Packets.BANCHO_LOGIN_PERMISSIONS, buffer.toByteArray());
+  }
+
+  private void write(OutputStream stream, ChannelJoinSuccessPacket packet) throws IOException {
+      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+      writer.writeString(buffer, packet.getName());
+      writeRawPacket(stream, Packets.BANCHO_CHANNEL_JOIN_SUCCESS, buffer.toByteArray());
   }
 }

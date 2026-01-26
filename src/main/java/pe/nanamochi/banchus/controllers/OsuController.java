@@ -176,7 +176,8 @@ public class OsuController {
       packetWriter.writePacket(
           stream,
           new LoginPermissionsPacket(
-              PrivilegesUtil.serverToClientPrivileges(user.getPrivileges())));
+              PrivilegesUtil.serverToClientPrivileges(
+                  user.getPrivileges() | ClientPrivileges.SUPPORTER.getValue())));
 
       // Chat channels
       List<Channel> autoJoinChannels = channelService.findByAutoJoin(true);

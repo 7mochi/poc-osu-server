@@ -10,10 +10,10 @@ import pe.nanamochi.banchus.packets.Packets;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoginPermissionsPacket implements Packet {
-    private int privileges;
+  private int privileges;
 
-    @Override
-    public Packets getPacketType() {
-        return Packets.BANCHO_LOGIN_PERMISSIONS;
-    }
+  @Override
+  public Packets getPacketType() {
+    return Packets.BANCHO_LOGIN_PERMISSIONS;
+  }
 }

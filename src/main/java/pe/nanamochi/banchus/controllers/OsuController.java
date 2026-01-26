@@ -40,7 +40,6 @@ import pe.nanamochi.banchus.services.SessionService;
 import pe.nanamochi.banchus.services.StatService;
 import pe.nanamochi.banchus.services.UserService;
 import pe.nanamochi.banchus.utils.IPApi;
-import pe.nanamochi.banchus.utils.PrivilegesUtil;
 import pe.nanamochi.banchus.utils.Security;
 import pe.nanamochi.banchus.utils.Validation;
 
@@ -174,10 +173,10 @@ public class OsuController {
 
       // TODO: Write privileges packet
       if (!PrivilegesUtil.has(user.getPrivileges(), Privileges.VERIFIED)) {
-          user.setPrivileges(PrivilegesUtil.add(user.getPrivileges(), Privileges.VERIFIED));
-          userService.updateUser(user);
+        user.setPrivileges(PrivilegesUtil.add(user.getPrivileges(), Privileges.VERIFIED));
+        userService.updateUser(user);
 
-          packetWriter.writePacket(stream, new LoginPermissionsPacket(user.getPrivileges()));
+        packetWriter.writePacket(stream, new LoginPermissionsPacket(user.getPrivileges()));
       }
 
       // TODO: Write osu chat channels packet
@@ -185,13 +184,16 @@ public class OsuController {
       // Autojoin to channels
       List<Channel> autoJoinChannels = channelService.findByAutoJoinTrue();
       for (Channel channel : autoJoinChannels) {
-          if (!channelService.canReadChannel(channel, user.getPrivileges())
-                  || channel.getName().equals("#lobby")) {
-              continue;
-          }
+        if (!channelService.canReadChannel(channel, user.getPrivileges())
+            || channel.getName().equals("#lobby")) {
+          continue;
+        }
 
-          Set<UUID> currentChannelMembers = channelMembersRedisService.getMembers(channel.getId());
-          packetWriter.writePacket(stream, new ChannelAvailablePacket(channel.getName(), channel.getTopic(), currentChannelMembers.size()));
+        Set<UUID> currentChannelMembers = channelMembersRedisService.getMembers(channel.getId());
+        packetWriter.writePacket(
+            stream,
+            new ChannelAvailablePacket(
+                channel.getName(), channel.getTopic(), currentChannelMembers.size()));
       }
 
       // Notify the client that we're done sending channel info

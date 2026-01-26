@@ -10,10 +10,10 @@ import pe.nanamochi.banchus.packets.Packets;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChannelJoinSuccessPacket implements Packet {
-    private String name;
+  private String name;
 
-    @Override
-    public Packets getPacketType() {
-        return Packets.BANCHO_CHANNEL_JOIN_SUCCESS;
-    }
+  @Override
+  public Packets getPacketType() {
+    return Packets.BANCHO_CHANNEL_JOIN_SUCCESS;
+  }
 }

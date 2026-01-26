@@ -1,5 +1,7 @@
 package pe.nanamochi.banchus.startup;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import pe.nanamochi.banchus.entities.CountryCode;
@@ -9,9 +11,6 @@ import pe.nanamochi.banchus.repositories.ChannelRepository;
 import pe.nanamochi.banchus.repositories.UserRepository;
 import pe.nanamochi.banchus.services.StatService;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Component
 public class DataSeeder implements CommandLineRunner {
 
@@ -19,7 +18,8 @@ public class DataSeeder implements CommandLineRunner {
   private final ChannelRepository channelRepository;
   private final StatService statService;
 
-  public DataSeeder(UserRepository userRepository, ChannelRepository channelRepository, StatService statService) {
+  public DataSeeder(
+      UserRepository userRepository, ChannelRepository channelRepository, StatService statService) {
     this.userRepository = userRepository;
     this.channelRepository = channelRepository;
     this.statService = statService;

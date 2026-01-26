@@ -151,23 +151,23 @@ public class PacketWriter {
   }
 
   private void write(OutputStream stream, ChannelAvailablePacket packet) throws IOException {
-      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-      writer.writeString(buffer, packet.getRealName());
-      writer.writeString(buffer, packet.getTopic());
-      writer.writeInt32(buffer, packet.getUserCount());
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeString(buffer, packet.getRealName());
+    writer.writeString(buffer, packet.getTopic());
+    writer.writeInt32(buffer, packet.getUserCount());
 
-      writeRawPacket(stream, Packets.BANCHO_CHANNEL_AVAILABLE, buffer.toByteArray());
+    writeRawPacket(stream, Packets.BANCHO_CHANNEL_AVAILABLE, buffer.toByteArray());
   }
 
   private void write(OutputStream stream, LoginPermissionsPacket packet) throws IOException {
-      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-      writer.writeInt32(buffer, packet.getPrivileges());
-      writeRawPacket(stream, Packets.BANCHO_LOGIN_PERMISSIONS, buffer.toByteArray());
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeInt32(buffer, packet.getPrivileges());
+    writeRawPacket(stream, Packets.BANCHO_LOGIN_PERMISSIONS, buffer.toByteArray());
   }
 
   private void write(OutputStream stream, ChannelJoinSuccessPacket packet) throws IOException {
-      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-      writer.writeString(buffer, packet.getName());
-      writeRawPacket(stream, Packets.BANCHO_CHANNEL_JOIN_SUCCESS, buffer.toByteArray());
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeString(buffer, packet.getName());
+    writeRawPacket(stream, Packets.BANCHO_CHANNEL_JOIN_SUCCESS, buffer.toByteArray());
   }
 }

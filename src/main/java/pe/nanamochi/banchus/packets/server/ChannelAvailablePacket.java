@@ -10,12 +10,12 @@ import pe.nanamochi.banchus.packets.Packets;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChannelAvailablePacket implements Packet {
-    private String realName;
-    private String topic;
-    private int userCount;
+  private String realName;
+  private String topic;
+  private int userCount;
 
-    @Override
-    public Packets getPacketType() {
-        return Packets.BANCHO_CHANNEL_AVAILABLE;
-    }
+  @Override
+  public Packets getPacketType() {
+    return Packets.BANCHO_CHANNEL_AVAILABLE;
+  }
 }

@@ -3,7 +3,7 @@ package pe.nanamochi.banchus.services;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import pe.nanamochi.banchus.entities.Privileges;
+import pe.nanamochi.banchus.entities.ServerPrivileges;
 import pe.nanamochi.banchus.entities.db.Channel;
 import pe.nanamochi.banchus.repositories.ChannelRepository;
 import pe.nanamochi.banchus.utils.PrivilegesUtil;
@@ -26,7 +26,7 @@ public class ChannelService {
   }
 
   public boolean canReadChannel(Channel channel, int userPrivileges) {
-    if (channel.getReadPrivileges() == Privileges.UNRESTRICTED.bitPosition()) {
+    if (channel.getReadPrivileges() == ServerPrivileges.UNRESTRICTED.bitPosition()) {
       return true;
     }
 

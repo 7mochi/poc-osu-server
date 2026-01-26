@@ -1,11 +1,9 @@
 package pe.nanamochi.banchus.services;
 
-import java.security.NoSuchAlgorithmException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.entities.db.User;
 import pe.nanamochi.banchus.repositories.UserRepository;
-import pe.nanamochi.banchus.utils.Security;
 
 @Service
 public class UserService {
@@ -24,13 +22,14 @@ public class UserService {
     return userRepository.findByEmail(email);
   }
 
-  public User createUser(String username, String passwordPlainText, String email, int country)
-      throws NoSuchAlgorithmException {
-    User user = new User();
-    user.setUsername(username);
-    user.setPasswordMd5(Security.getMd5(passwordPlainText));
-    user.setEmail(email);
-    user.setCountry(country);
+  public User createUser(User user) {
+    return userRepository.save(user);
+  }
+
+  public User updateUser(User user) {
+    if (!userRepository.existsById(user.getId())) {
+      throw new IllegalArgumentException("User not found: " + user.getUsername());
+    }
     return userRepository.save(user);
   }
 }

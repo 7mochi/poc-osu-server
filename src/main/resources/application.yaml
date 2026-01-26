@@ -46,3 +46,8 @@ osu:
   api:
     client-id: ${OSU_API_CLIENT_ID:0}
     client-secret: ${OSU_API_CLIENT_SECRET:}
+
+banchus:
+  menu-icon:
+    image-url: ${MENU_ICON_IMAGE_URL}
+    redirect-url: ${MENU_ICON_REDIRECT_URL}

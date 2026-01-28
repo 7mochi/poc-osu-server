@@ -22,7 +22,7 @@ public class ServletConfiguration {
   public ServletRegistrationBean<ScoreSubmissionServlet> scoreSubmissionServletRegistration(
       ScoreSubmissionServlet servlet) {
     ServletRegistrationBean<ScoreSubmissionServlet> registration =
-        new ServletRegistrationBean<>(servlet, "/web/osu-submit-modular-selector.php");
+        new ServletRegistrationBean<>(servlet, "/bancho/web/osu-submit-modular-selector.php");
     registration.setName("scoreSubmissionServlet");
     registration.setLoadOnStartup(1);
     return registration;

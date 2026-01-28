@@ -2,20 +2,20 @@ package pe.nanamochi.banchus.config;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.Part;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import java.io.IOException;
+import java.util.Collection;
 
 /**
- * This filter intercepts requests to /web/osu-submit-modular-selector.php
- * BEFORE Spring tries to parse the multipart.
- * 
- * Instead of letting the request reach Spring's DispatcherServlet
- * (which would cause Spring to try parsing the multipart),
- * this filter does a direct FORWARD to the custom servlet,
- * bypassing Spring completely.
+ * This filter intercepts requests to /bancho/web/osu-submit-modular-selector.php
+ * and prevents Spring from trying to parse the multipart request,
+ * allowing the custom servlet to handle it directly.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -60,15 +60,27 @@ public class ScoreSubmissionFilter implements Filter {
       }
     }
     
-    // If request is for score submission endpoint, handle it directly WITHOUT going through Spring's DispatcherServlet
+    // If request is for score submission endpoint, wrap it to prevent Spring from parsing multipart
     if (path.contains("osu-submit-modular-selector.php") && "POST".equals(method)) {
-      logger.info("🔗 Routing score submission to servlet, bypassing Spring multipart parsing");
-      // Forward directly to the servlet, bypassing DispatcherServlet which tries to parse multipart
-      request.getRequestDispatcher("/web/osu-submit-modular-selector.php").forward(request, response);
+      logger.info("🔗 Routing score submission to servlet, disabling Spring multipart parsing");
+      // Wrap the request to prevent Spring from calling getParts()
+      HttpServletRequest wrappedRequest = new HttpServletRequestWrapper((HttpServletRequest) request) {
+        @Override
+        public Collection<Part> getParts() throws IOException, ServletException {
+          // Don't allow Spring to call getParts() - this causes the multipart parsing error
+          throw new ServletException("Multipart parsing disabled for this request");
+        }
+        
+        @Override
+        public Part getPart(String name) throws IOException, ServletException {
+          throw new ServletException("Multipart parsing disabled for this request");
+        }
+      };
+      chain.doFilter(wrappedRequest, response);
       return;
     }
 
-    // For all other requests, process normally with Spring
+    // Continue with filter chain
     chain.doFilter(request, response);
   }
 }

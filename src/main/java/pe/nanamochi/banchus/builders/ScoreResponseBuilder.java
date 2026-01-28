@@ -51,8 +51,8 @@ public class ScoreResponseBuilder {
       passcount = 0;
     }
 
-    response.append("beatmapId:").append(beatmap.getId()).append("|")
-        .append("beatmapSetId:").append(beatmap.getSetId()).append("|")
+    response.append("beatmapId:").append(beatmap.getBeatmapId()).append("|")
+        .append("beatmapSetId:").append(beatmap.getBeatmapsetId()).append("|")
         .append("beatmapPlaycount:").append(playcount).append("|")
         .append("beatmapPasscount:").append(passcount).append("|")
         .append("approvedDate:").append(formatDateTime(beatmap.getLastUpdate())).append("|")
@@ -60,7 +60,7 @@ public class ScoreResponseBuilder {
 
     // Beatmap ranking chart
     response.append("|chartId:beatmap|")
-        .append("chartUrl:https://osu.ppy.sh/beatmapsets/").append(beatmap.getSetId()).append("|")
+        .append("chartUrl:https://osu.ppy.sh/beatmapsets/").append(beatmap.getBeatmapsetId()).append("|")
         .append("chartName:Beatmap Ranking|")
         .append("rankBefore:|")
         .append("rankAfter:|")
@@ -127,8 +127,8 @@ public class ScoreResponseBuilder {
     StringBuilder response = new StringBuilder();
 
     // Beatmap info
-    response.append("beatmapId:").append(beatmap.getId()).append("|")
-        .append("beatmapSetId:").append(beatmap.getSetId()).append("|")
+    response.append("beatmapId:").append(beatmap.getBeatmapId()).append("|")
+        .append("beatmapSetId:").append(beatmap.getBeatmapsetId()).append("|")
         .append("beatmapPlaycount:").append(safeNull(beatmap.getPlaycount(), 0)).append("|")
         .append("beatmapPasscount:").append(safeNull(beatmap.getPasscount(), 0)).append("|")
         .append("approvedDate:").append(formatDateTime(beatmap.getLastUpdate())).append("|")
@@ -153,7 +153,7 @@ public class ScoreResponseBuilder {
     }
 
     response.append("|chartId:beatmap|")
-        .append("chartUrl:https://osu.ppy.sh/beatmapsets/").append(beatmap.getSetId()).append("|")
+        .append("chartUrl:https://osu.ppy.sh/beatmapsets/").append(beatmap.getBeatmapsetId()).append("|")
         .append("chartName:Beatmap Ranking|")
         .append("rankBefore:").append(beatmapRankBefore).append("|")
         .append("rankAfter:").append(beatmapRankAfter).append("|")

@@ -1,0 +1,189 @@
+#!/bin/bash
+# filepath: /home/hinami/banchus/start.sh
+
+set -e
+
+# Colores
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# Directorios
+PROJECT_DIR="/home/hinami/banchus-git/banchus/"
+JAR_FILE="$PROJECT_DIR/target/banchus-0.0.1-SNAPSHOT.jar"
+SPRING_PID=""
+CADDY_PID=""
+
+# Funciones de logging
+log_info() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_debug() {
+    echo -e "${BLUE}[DEBUG]${NC} $1"
+}
+
+# Limpieza al salir
+cleanup() {
+    echo ""
+    log_warn "Deteniendo servicios..."
+    
+    if [ ! -z "$SPRING_PID" ] && ps -p $SPRING_PID > /dev/null 2>&1; then
+        log_info "Deteniendo Spring Boot (PID: $SPRING_PID)..."
+        kill $SPRING_PID 2>/dev/null || true
+        wait $SPRING_PID 2>/dev/null || true
+    fi
+    
+    if [ ! -z "$CADDY_PID" ] && ps -p $CADDY_PID > /dev/null 2>&1; then
+        log_info "Deteniendo Caddy (PID: $CADDY_PID)..."
+        sudo kill $CADDY_PID 2>/dev/null || true
+        wait $CADDY_PID 2>/dev/null || true
+    fi
+    
+    log_info "Servicios detenidos ✓"
+    exit 0
+}
+
+# Trap para Ctrl+C
+trap cleanup SIGINT SIGTERM
+
+# Verificar Redis
+check_redis() {
+    log_info "Verificando Redis/Valkey..."
+    if ! pgrep -f "valkey-server\|redis-server" > /dev/null; then
+        log_warn "Redis/Valkey no está corriendo, iniciando..."
+        sudo systemctl start valkey 2>/dev/null || redis-server --daemonize yes
+        sleep 2
+    fi
+    log_info "Redis/Valkey listo ✓"
+}
+
+# Compilar
+compile_project() {
+    log_info "Compilando proyecto..."
+    cd "$PROJECT_DIR"
+    mvn clean package -DskipTests -q
+    if [ -f "$JAR_FILE" ]; then
+        log_info "Compilación exitosa ✓"
+    else
+        log_error "Error en compilación"
+        exit 1
+    fi
+}
+
+# Iniciar Spring Boot
+start_spring_boot() {
+    log_info "Iniciando Spring Boot..."
+    pkill -f "java.*banchus" 2>/dev/null || true
+    sleep 1
+    
+    java -jar "$JAR_FILE" &
+    SPRING_PID=$!
+    sleep 3
+    
+    if ps -p $SPRING_PID > /dev/null; then
+        log_info "Spring Boot iniciado (PID: $SPRING_PID) ✓"
+    else
+        log_error "Error al iniciar Spring Boot"
+        exit 1
+    fi
+}
+
+# Iniciar Caddy
+start_caddy() {
+    log_info "Iniciando Caddy..."
+    sudo pkill -f caddy 2>/dev/null || true
+    sleep 1
+    
+    sudo caddy run --config "$PROJECT_DIR/Caddyfile" &
+    CADDY_PID=$!
+    sleep 2
+    
+    if ps -p $CADDY_PID > /dev/null; then
+        log_info "Caddy iniciado (PID: $CADDY_PID) ✓"
+    else
+        log_error "Error al iniciar Caddy"
+        exit 1
+    fi
+}
+
+# Monitor de cambios
+monitor_changes() {
+    log_info "Monitoreando cambios en código..."
+    
+    while true; do
+        # Esperar cambios en src/
+        inotifywait -r -e modify "$PROJECT_DIR/src/" -q && {
+            echo ""
+            log_debug "Cambios detectados en código"
+            log_info "Recompilando y reiniciando..."
+            
+            cd "$PROJECT_DIR"
+            if mvn clean package -DskipTests -q; then
+                log_info "Recompilación exitosa ✓"
+                
+                # Detener Spring Boot
+                if [ ! -z "$SPRING_PID" ] && ps -p $SPRING_PID > /dev/null 2>&1; then
+                    kill $SPRING_PID 2>/dev/null || true
+                    wait $SPRING_PID 2>/dev/null || true
+                fi
+                
+                # Reiniciar Spring Boot
+                sleep 1
+                java -jar "$JAR_FILE" &
+                SPRING_PID=$!
+                sleep 3
+                
+                if ps -p $SPRING_PID > /dev/null; then
+                    log_info "Spring Boot reiniciado (PID: $SPRING_PID) ✓"
+                else
+                    log_error "Error al reiniciar Spring Boot"
+                fi
+            else
+                log_error "Error en recompilación"
+            fi
+        }
+    done
+}
+
+# Main
+main() {
+    clear
+    echo "================================"
+    echo -e "${GREEN}🚀 Banchus Server${NC}"
+    echo "================================"
+    echo ""
+    
+    check_redis
+    compile_project
+    start_spring_boot
+    start_caddy
+    
+    echo ""
+    echo "================================"
+    echo -e "${GREEN}✓ Banchus iniciado${NC}"
+    echo "================================"
+    echo ""
+    echo "URLs disponibles:"
+    echo "  🔗 https://bancho.local"
+    echo "  🔗 https://osu.bancho.local"
+    echo "  🔗 https://api.bancho.local"
+    echo ""
+    echo -e "${BLUE}Monitoreando cambios en src/...${NC}"
+    echo -e "${YELLOW}Presiona Ctrl+C para detener${NC}"
+    echo ""
+    
+    monitor_changes
+}
+
+main

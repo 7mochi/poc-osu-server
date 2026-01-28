@@ -142,8 +142,8 @@ public class LeaderboardService {
         webRankedStatus,
         RankedStatusConverter.getWebStatusName(webRankedStatus)
     );
-    Integer beatmapId = beatmap.getId() != null ? beatmap.getId() : 0;
-    Integer beatmapSetId = beatmap.getSetId() != null ? beatmap.getSetId() : 0;
+    Integer beatmapId = beatmap.getBeatmapId() != null ? beatmap.getBeatmapId() : 0;
+    Integer beatmapSetId = beatmap.getBeatmapsetId() != null ? beatmap.getBeatmapsetId() : 0;
     int scoreCount = scores != null ? scores.size() : 0;
 
     response

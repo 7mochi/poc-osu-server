@@ -8,4 +8,5 @@ import pe.nanamochi.banchus.entities.db.Beatmap;
 @Repository
 public interface BeatmapRepository extends JpaRepository<Beatmap, Integer> {
   Optional<Beatmap> findByMd5(String md5);
+  Optional<Beatmap> findByBeatmapId(Integer beatmapId);
 }

@@ -2,15 +2,18 @@ package pe.nanamochi.banchus.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 import pe.nanamochi.banchus.adapters.OsuApiV2Adapter;
 import pe.nanamochi.banchus.entities.db.Beatmap;
 import pe.nanamochi.banchus.repositories.BeatmapRepository;
@@ -94,8 +97,19 @@ public class WebController {
         beatmap = osuApiAdapter.lookupBeatmapByMd5(actualMapMd5);
         
         if (beatmap != null) {
-          // Save to local database for future requests
-          beatmap = beatmapRepository.save(beatmap);
+          // Check if beatmap_id already exists (UNIQUE constraint)
+          try {
+            beatmap = beatmapRepository.save(beatmap);
+          } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Beatmap already exists with same beatmap_id, fetch it instead
+            logger.warn("Beatmap with beatmap_id {} already exists, fetching from DB", beatmap.getBeatmapId());
+            Optional<Beatmap> existingOpt = beatmapRepository.findByBeatmapId(beatmap.getBeatmapId());
+            if (existingOpt.isPresent()) {
+              beatmap = existingOpt.get();
+            } else {
+              throw e;
+            }
+          }
         } else {
           // Create a dummy beatmap to avoid nulls in database
           Beatmap dummy = Beatmap.builder()
@@ -105,7 +119,7 @@ public class WebController {
               .creator("Unknown Creator")
               .version("Unknown")
               .status(0)
-              .setId(0)
+              .beatmapsetId(0)
               .cs(0f)
               .ar(0f)
               .od(0f)
@@ -133,12 +147,14 @@ public class WebController {
           "✓ Query executed, found {} scores\n" +
           "✓ Retornando {} scores para {}\n" +
           "═══════════════════════════════════════════════════════════",
-          actualMapMd5, beatmap != null ? beatmap.getId() : "null", 
+          actualMapMd5, beatmap != null ? beatmap.getBeatmapId() : "null", 
           beatmap != null ? beatmap.getTitle() : "null",
           actualMapMd5, scores != null ? scores.size() : 0, 
           scores != null ? scores.size() : 0, actualMapMd5);
 
-      return ResponseEntity.ok(formattedResponse);
+      return ResponseEntity.ok()
+          .contentType(MediaType.APPLICATION_OCTET_STREAM)
+          .body(formattedResponse);
 
     } catch (Exception e) {
       logger.error("═══════════════════════════════════════════════════════════\n" +
@@ -198,23 +214,57 @@ public class WebController {
   }
 
   /**
-   * GET /web/osu-rate.php Simple confirmation endpoint for rating/submission
-   * The osu! client calls this to confirm beatmap submission before posting the score
+   * POST /web/osu-session.php Session validation endpoint
+   * The osu! client calls this BEFORE score submission to establish/validate session
+   * We redirect to osu.ppy.sh like banchopy does - let the real osu! handle it
+   */
+  @PostMapping("/osu-session.php")
+  public ResponseEntity<Void> sessionPostHandler() {
+    logger.info("═══════════════════════════════════════════════════════════");
+    logger.info("📥 [POST] /web/osu-session.php - Redirecting to osu.ppy.sh");
+    logger.info("═══════════════════════════════════════════════════════════");
+    
+    return ResponseEntity
+        .status(HttpStatus.TEMPORARY_REDIRECT)
+        .location(java.net.URI.create("https://osu.ppy.sh/web/osu-session.php"))
+        .build();
+  }
+
+  /**
+   * GET /web/osu-rate.php Rate/check beatmap rating endpoint
+   * We redirect to osu.ppy.sh like banchopy does - let the real osu! handle it
    */
   @GetMapping("/osu-rate.php")
-  public ResponseEntity<String> rateGetHandler(
+  public ResponseEntity<Void> rateGetHandler(
       @RequestParam(value = "u", required = false) String username,
       @RequestParam(value = "p", required = false) String pass,
-      @RequestParam(value = "c", required = false) String mapMd5) {
+      @RequestParam(value = "c", required = false) String mapMd5,
+      @RequestParam(value = "v", required = false) Integer rating) {
 
     logger.info("═══════════════════════════════════════════════════════════");
-    logger.info("📥 [GET] /web/osu-rate.php");
-    logger.info("  username = {}", username);
-    logger.info("  mapMd5 = {}", mapMd5);
+    logger.info("📥 [GET] /web/osu-rate.php - Redirecting to osu.ppy.sh");
     logger.info("═══════════════════════════════════════════════════════════");
 
-    // Just return OK - client uses this as a ping to confirm server is ready for score submission
-    return ResponseEntity.ok("ok");
+    // Redirect to osu.ppy.sh like banchopy does
+    return ResponseEntity
+        .status(HttpStatus.MOVED_PERMANENTLY)
+        .location(java.net.URI.create("https://osu.ppy.sh/web/osu-rate.php"))
+        .build();
+  }
+
+  /**
+   * GET /web/maps/{beatmap_filename}
+   * Redirige al servidor osu.ppy.sh para descargar archivos .osu
+   * El cliente osu! usa este endpoint para obtener beatmaps de forma directa
+   */
+  @GetMapping("/maps/{beatmap_filename}")
+  public RedirectView getMapsFile(@PathVariable String beatmap_filename) {
+    logger.info("📥 [GET] /web/maps/{} - Redirecting to osu.ppy.sh", beatmap_filename);
+    RedirectView redirectView = new RedirectView();
+    redirectView.setUrl("https://osu.ppy.sh/web/maps/" + beatmap_filename);
+    redirectView.setStatusCode(HttpStatus.MOVED_PERMANENTLY);
+    redirectView.setExposeModelAttributes(false);
+    return redirectView;
   }
 
   /**
@@ -235,21 +285,14 @@ public class WebController {
 
   /**
    * Catch-all para loguear peticiones POST desconocidas a /web/*
+   * NOTA: El endpoint /web/osu-submit-modular-selector.php es manejado por ScoreSubmissionServlet
+   * (servlet bean registrado en ServletConfiguration), por lo que NO debería llegar aquí.
+   * Si llega aquí, significa que el servlet no se registró correctamente.
+   * 
+   * Para evitar bloquear el servlet, este catch-all solo responde a rutas 
+   * que claramente NO son score submission.
    */
-  @PostMapping("/**")
-  public ResponseEntity<String> logPostRequest(
-      HttpServletRequest request, @RequestBody(required = false) byte[] body) {
-    String path = request.getRequestURI();
-    String queryString = request.getQueryString() != null ? "?" + request.getQueryString() : "";
-
-    logger.info("═══════════════════════════════════════════════════════════");
-    logger.info("📨 [POST] {} {}", path, queryString);
-    logger.info("User-Agent: {}", request.getHeader("User-Agent"));
-    if (body != null) {
-      logger.info("Body size: {} bytes", body.length);
-    }
-    logger.info("═══════════════════════════════════════════════════════════");
-
-    return ResponseEntity.status(404).body("Not Found");
-  }
+  // REMOVIDO: Este catch-all era demasiado general y bloqueaba el servlet
+  // @PostMapping("/**")
+  // En su lugar, confiar en que los servlets registrados manejen sus propios endpoints
 }

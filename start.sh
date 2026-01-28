@@ -1,23 +1,23 @@
 #!/bin/bash
-# filepath: /home/hinami/banchus/start.sh
+# Banchus Server Launcher Script with Caddy support
+# Compile, build, and run Spring Boot + Caddy with hot reload
 
 set -e
 
-# Colores
+# Colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Directorios
-PROJECT_DIR="/home/hinami/banchus"
-JAR_FILE="$PROJECT_DIR/target/banchus-0.0.1-SNAPSHOT.jar"
+# Directories
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BUILD_DIR="$PROJECT_DIR/target"
 SPRING_PID=""
 CADDY_PID=""
-LOG_FILE="/tmp/banchus.log"
 
-# Funciones de logging
+# Logging functions
 log_info() {
     echo -e "${GREEN}[INFO]${NC} $1"
 }
@@ -34,135 +34,147 @@ log_debug() {
     echo -e "${BLUE}[DEBUG]${NC} $1"
 }
 
-# Limpieza al salir
+# Cleanup on exit
 cleanup() {
     echo ""
-    log_warn "Deteniendo servicios..."
+    log_warn "Stopping services..."
     
     if [ ! -z "$SPRING_PID" ] && ps -p $SPRING_PID > /dev/null 2>&1; then
-        log_info "Deteniendo Spring Boot (PID: $SPRING_PID)..."
+        log_info "Stopping Spring Boot (PID: $SPRING_PID)..."
         kill $SPRING_PID 2>/dev/null || true
         wait $SPRING_PID 2>/dev/null || true
     fi
     
     if [ ! -z "$CADDY_PID" ] && ps -p $CADDY_PID > /dev/null 2>&1; then
-        log_info "Deteniendo Caddy (PID: $CADDY_PID)..."
+        log_info "Stopping Caddy (PID: $CADDY_PID)..."
         sudo kill $CADDY_PID 2>/dev/null || true
         wait $CADDY_PID 2>/dev/null || true
     fi
     
-    log_info "Servicios detenidos ✓"
+    log_info "Services stopped ✓"
     exit 0
 }
 
-# Trap para Ctrl+C
+# Trap Ctrl+C
 trap cleanup SIGINT SIGTERM
 
-# Verificar Redis
-check_redis() {
-    log_info "Verificando Redis/Valkey..."
-    if ! pgrep -f "valkey-server\|redis-server" > /dev/null; then
-        log_warn "Redis/Valkey no está corriendo, iniciando..."
-        sudo systemctl start valkey 2>/dev/null || redis-server --daemonize yes
-        sleep 2
+# Find the JAR file (handles git commit ID suffix)
+find_jar() {
+    local jar=$(ls -t "$BUILD_DIR"/banchus-0.0.1-*.jar 2>/dev/null | head -1)
+    if [ -z "$jar" ]; then
+        return 1
     fi
-    log_info "Redis/Valkey listo ✓"
+    echo "$jar"
 }
 
-# Compilar
+# Compile project
 compile_project() {
-    log_info "Compilando proyecto..."
+    log_info "Compiling project with Maven..."
     cd "$PROJECT_DIR"
-    mvn clean package -DskipTests -q
-    if [ -f "$JAR_FILE" ]; then
-        log_info "Compilación exitosa ✓"
+    
+    if mvn clean package -DskipTests -q; then
+        log_info "Compilation successful ✓"
+        return 0
     else
-        log_error "Error en compilación"
+        log_error "Compilation failed"
+        return 1
+    fi
+}
+
+# Start Spring Boot
+start_spring_boot() {
+    local jar=$(find_jar)
+    
+    if [ -z "$jar" ]; then
+        log_error "JAR file not found in $BUILD_DIR"
         exit 1
     fi
-}
-
-# Iniciar Spring Boot
-start_spring_boot() {
-    log_info "Iniciando Spring Boot..."
+    
+    log_info "Starting Spring Boot..."
+    log_debug "Using JAR: $(basename $jar)"
+    
+    # Kill any existing instances
     pkill -f "java.*banchus" 2>/dev/null || true
     sleep 1
     
-    # Verificar que el JAR existe
-    if [ ! -f "$JAR_FILE" ]; then
-        log_error "JAR no encontrado: $JAR_FILE"
-        exit 1
-    fi
-    
-    java -jar "$JAR_FILE" > "$LOG_FILE" 2>&1 &
+    # Start the JAR
+    java -jar "$jar" &
     SPRING_PID=$!
-    sleep 4
     
-    if ps -p $SPRING_PID > /dev/null; then
-        log_info "Spring Boot iniciado (PID: $SPRING_PID) ✓"
-        log_debug "Logs: $LOG_FILE"
+    # Wait for startup
+    sleep 5
+    
+    if ps -p $SPRING_PID > /dev/null 2>&1; then
+        log_info "Spring Boot started (PID: $SPRING_PID) ✓"
+        return 0
     else
-        log_error "Error al iniciar Spring Boot"
-        log_error "Últimos logs:"
-        tail -30 "$LOG_FILE"
-        exit 1
+        log_error "Failed to start Spring Boot"
+        return 1
     fi
 }
 
-# Iniciar Caddy
+# Start Caddy
 start_caddy() {
-    log_info "Iniciando Caddy..."
+    log_info "Starting Caddy..."
     sudo pkill -f caddy 2>/dev/null || true
     sleep 1
     
-    sudo caddy run --config "$PROJECT_DIR/Caddyfile" > /tmp/caddy.log 2>&1 &
+    if ! [ -f "$PROJECT_DIR/Caddyfile" ]; then
+        log_warn "Caddyfile not found, skipping Caddy"
+        return 0
+    fi
+    
+    sudo caddy run --config "$PROJECT_DIR/Caddyfile" &
     CADDY_PID=$!
     sleep 2
     
-    if ps -p $CADDY_PID > /dev/null; then
-        log_info "Caddy iniciado (PID: $CADDY_PID) ✓"
+    if ps -p $CADDY_PID > /dev/null 2>&1; then
+        log_info "Caddy started (PID: $CADDY_PID) ✓"
+        return 0
     else
-        log_warn "Error al iniciar Caddy (puede requerir privilegios sudo)"
+        log_warn "Failed to start Caddy (may require sudo password)"
+        return 0
     fi
 }
 
-# Monitor de cambios
+# Monitor for code changes and reload
 monitor_changes() {
-    log_info "Monitoreando cambios en código..."
+    log_info "Monitoring for code changes..."
     
     while true; do
-        # Esperar cambios en src/
-        if inotifywait -r -e modify "$PROJECT_DIR/src/" -q 2>/dev/null; then
+        # Wait for changes in src/
+        inotifywait -r -e modify "$PROJECT_DIR/src/" -q 2>/dev/null && {
             echo ""
-            log_debug "Cambios detectados en código"
-            log_info "Recompilando y reiniciando..."
+            log_debug "Code changes detected"
+            log_info "Stopping Spring Boot before recompiling..."
             
+            # Stop old instance FIRST (before compilation)
+            if [ ! -z "$SPRING_PID" ] && ps -p $SPRING_PID > /dev/null 2>&1; then
+                log_debug "Stopping Spring Boot instance (PID: $SPRING_PID)..."
+                kill $SPRING_PID 2>/dev/null || true
+                wait $SPRING_PID 2>/dev/null || true
+            fi
+            
+            # Wait for JAR to be released
+            sleep 2
+            
+            log_info "Recompiling..."
             cd "$PROJECT_DIR"
             if mvn clean package -DskipTests -q; then
-                log_info "Recompilación exitosa ✓"
+                log_info "Recompilation successful ✓"
                 
-                # Detener Spring Boot
-                if [ ! -z "$SPRING_PID" ] && ps -p $SPRING_PID > /dev/null 2>&1; then
-                    kill $SPRING_PID 2>/dev/null || true
-                    wait $SPRING_PID 2>/dev/null || true
-                fi
-                
-                # Reiniciar Spring Boot
                 sleep 1
-                java -jar "$JAR_FILE" > "$LOG_FILE" 2>&1 &
-                SPRING_PID=$!
-                sleep 4
                 
-                if ps -p $SPRING_PID > /dev/null; then
-                    log_info "Spring Boot reiniciado (PID: $SPRING_PID) ✓"
+                # Start new instance
+                if start_spring_boot; then
+                    log_info "Spring Boot restarted successfully ✓"
                 else
-                    log_error "Error al reiniciar Spring Boot"
-                    tail -30 "$LOG_FILE"
+                    log_error "Failed to restart Spring Boot"
                 fi
             else
-                log_error "Error en recompilación"
+                log_error "Recompilation failed"
             fi
-        fi
+        }
     done
 }
 
@@ -174,30 +186,37 @@ main() {
     echo "================================"
     echo ""
     
-    check_redis
-    compile_project
-    start_spring_boot
+    # Compile
+    if ! compile_project; then
+        exit 1
+    fi
+    
+    # Start Spring Boot
+    if ! start_spring_boot; then
+        exit 1
+    fi
+    
+    # Start Caddy
     start_caddy
     
     echo ""
     echo "================================"
-    echo -e "${GREEN}✓ Banchus iniciado${NC}"
+    echo -e "${GREEN}✓ Banchus started${NC}"
     echo "================================"
     echo ""
-    echo "URLs disponibles:"
-    echo "  🔗 https://bancho.local"
-    echo "  🔗 https://osu.bancho.local"
-    echo "  🔗 https://api.bancho.local"
+    echo "Available endpoints:"
+    echo "  🔗 http://localhost:8080 (Direct)"
+    if [ ! -z "$CADDY_PID" ]; then
+        echo "  🔗 https://bancho.local (via Caddy)"
+        echo "  🔗 https://osu.bancho.local (via Caddy)"
+        echo "  🔗 https://api.bancho.local (via Caddy)"
+    fi
     echo ""
-    echo -e "${BLUE}Monitoreando cambios en src/...${NC}"
-    echo -e "${YELLOW}Presiona Ctrl+C para detener${NC}"
+    echo -e "${BLUE}Monitoring for changes in src/...${NC}"
+    echo -e "${YELLOW}Press Ctrl+C to stop${NC}"
     echo ""
     
-    # Mostrar logs en tiempo real
-    tail -f "$LOG_FILE" &
-    TAIL_PID=$!
-    trap "kill $TAIL_PID 2>/dev/null; cleanup" SIGINT SIGTERM
-    
+    # Monitor for changes
     monitor_changes
 }
 

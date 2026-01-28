@@ -219,8 +219,10 @@ public class ScoreSubmissionServlet extends HttpServlet {
       logger.info("=".repeat(63));
 
       response.setStatus(200);
-      response.setContentType("text/plain; charset=utf-8");
-      response.getWriter().write(clientResponse);
+      response.setContentType("application/octet-stream");
+      // Use OutputStream for binary protocol data (not Writer for text)
+      response.getOutputStream().write(clientResponse.getBytes(StandardCharsets.UTF_8));
+      response.getOutputStream().flush();
 
     } catch (Exception e) {
       logger.error("❌ Error processing score submission: {}", e.getMessage(), e);

@@ -51,3 +51,7 @@ banchus:
   menu-icon:
     image-url: ${MENU_ICON_IMAGE_URL}
     redirect-url: ${MENU_ICON_REDIRECT_URL}
+  scoring:
+    # Beatmap statuses that count towards PP (comma-separated list of integers)
+    # API v2 format: 1=Ranked, 2=Approved, 3=Qualified, 4=Loved, 0=Pending, -1=WIP, -2=Graveyard
+    pp-contributing-statuses: ${BEATMAP_PP_CONTRIBUTING_STATUSES:1,2}

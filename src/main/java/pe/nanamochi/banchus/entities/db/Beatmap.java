@@ -17,11 +17,14 @@ public class Beatmap {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(nullable = false)
-  private Integer id;
+  @Column(name = "id", nullable = false)
+  private Long internalId;  // Clave primaria interna
 
-  @Column(name = "set_id", nullable = false)
-  private Integer setId;
+  @Column(name = "beatmap_id", nullable = false, unique = true)
+  private Integer beatmapId;  // beatmap difficulty ID from osu! API
+
+  @Column(name = "beatmapset_id", nullable = false)
+  private Integer beatmapsetId;  // beatmapset ID from osu! API
 
   @Column(nullable = false)
   private Integer status;

@@ -231,6 +231,7 @@ public class OsuApiV2Adapter {
       Beatmap beatmap = new Beatmap();
 
       // Parsear campos de forma simple desde JSON
+      int beatmapId = extractIntValue(jsonResponse, "\"id\":");
       int beatmapsetId = extractIntValue(jsonResponse, "\"beatmapset_id\":");
       String title = extractStringValue(jsonResponse, "\"title\":\"");
       String artist = extractStringValue(jsonResponse, "\"artist\":\"");
@@ -244,6 +245,7 @@ public class OsuApiV2Adapter {
       double bpm = extractDoubleValue(jsonResponse, "\"bpm\":");
       
       logger.info("📋 EXTRACTED VALUES:");
+      logger.info("  beatmap_id: {}", beatmapId);
       logger.info("  beatmapset_id: {}", beatmapsetId);
       logger.info("  title: {}", title);
       logger.info("  artist: {}", artist);
@@ -263,7 +265,8 @@ public class OsuApiV2Adapter {
       logger.info("  status: {} (converted to: {})", statusString, rankedStatus);
 
       // Set fields in Beatmap object
-      beatmap.setSetId(beatmapsetId);
+      beatmap.setBeatmapId(beatmapId);
+      beatmap.setBeatmapsetId(beatmapsetId);
       beatmap.setStatus(rankedStatus);
       beatmap.setMd5(md5);
       beatmap.setArtist(artist.isEmpty() ? "" : artist);

@@ -35,7 +35,6 @@ public interface ScoreRepository extends JpaRepository<Score, Long> {
       AND s.game_mode = :gameMode 
       AND s.status = 2 
       AND s.map_md5 IS NOT NULL
-      AND m.status IN (1, 2)
     ORDER BY s.map_md5 ASC, s.pp DESC
     """, nativeQuery = true)
   List<Score> findBestScoresForUserInMode(@Param("userId") Long userId, @Param("gameMode") Integer gameMode);

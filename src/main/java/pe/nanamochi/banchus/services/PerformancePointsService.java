@@ -2,7 +2,6 @@ package pe.nanamochi.banchus.services;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,12 +13,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import io.github.nanamochi.rosu_pp_jar.Mods;
+import io.github.nanamochi.rosu_pp_jar.Performance;
+import io.github.nanamochi.rosu_pp_jar.PerformanceAttributes;
+import io.github.nanamochi.rosu_pp_jar.RosuException;
 import pe.nanamochi.banchus.entities.db.Beatmap;
 import pe.nanamochi.banchus.repositories.BeatmapRepository;
 
 /**
  * Service for calculating Performance Points (PP) from score data.
- * Uses rosu-pp-jar (Rust binding via JNA) for accurate PP calculations.
+ * Uses rosu-pp-jar (Rust binding) for accurate PP calculations.
  */
 @Service
 public class PerformancePointsService {
@@ -33,62 +36,6 @@ public class PerformancePointsService {
   private String beatmapCacheDir;
 
   private static final String OSU_BEATMAP_URL = "https://osu.ppy.sh/osu/";
-  private static File nativeLibrary;
-
-  static {
-    try {
-      // Cargar la librería nativa .so desde el JAR de rosu-pp-jar
-      nativeLibrary = loadNativeLibrary();
-      if (nativeLibrary != null) {
-        System.load(nativeLibrary.getAbsolutePath());
-        logger.info("✓ Native library loaded from: {}", nativeLibrary.getAbsolutePath());
-      }
-    } catch (Exception e) {
-      logger.warn("⚠️ Could not load native library: {}", e.getMessage());
-    }
-  }
-
-  /**
-   * Cargar la librería nativa .so desde el JAR de rosu-pp-jar
-   */
-  private static File loadNativeLibrary() {
-    try {
-      String libName = "librosu_pp_java.so";
-      String osName = System.getProperty("os.name").toLowerCase();
-      
-      // Determinar el nombre del archivo según el SO
-      if (osName.contains("win")) {
-        libName = "rosu_pp_java.dll";
-      } else if (osName.contains("mac")) {
-        libName = "librosu_pp_java.dylib";
-      }
-      
-      // Obtener la librería desde el ClassLoader
-      InputStream libStream = PerformancePointsService.class.getClassLoader()
-          .getResourceAsStream(libName);
-      
-      if (libStream == null) {
-        System.err.println("⚠️ Native library not found in JAR: " + libName);
-        return null;
-      }
-      
-      // Crear archivo temporal
-      File tempDir = new File(System.getProperty("java.io.tmpdir"));
-      File tempLib = new File(tempDir, libName);
-      
-      // Copiar archivo
-      Files.copy(libStream, tempLib.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-      tempLib.deleteOnExit();
-      
-      System.out.println("✓ Native library extracted to: " + tempLib.getAbsolutePath());
-      return tempLib;
-      
-    } catch (Exception e) {
-      System.err.println("❌ Error loading native library: " + e.getMessage());
-      e.printStackTrace();
-      return null;
-    }
-  }
 
   public double calculatePP(
       String mapMd5,
@@ -148,81 +95,66 @@ public class PerformancePointsService {
       double accuracy, int gameMode) {
 
     try {
-      logger.info("🔧 Loading rosu-pp-jar native library...");
+      logger.info("🔧 Calculating PP using rosu-pp-jar API...");
+      logger.debug("  Input parameters: n300={}, n100={}, n50={}, nmiss={}, combo={}, mods={}, acc={}", 
+          n300, n100, n50, nmiss, maxCombo, mods, accuracy);
 
-      // Use the generated classes from rosu-pp-jar
-      Class<?> beatmapClass = Class.forName("pe.nanamochi.rosu_pp_jar.Beatmap");
-      Class<?> performanceClass = Class.forName("pe.nanamochi.rosu_pp_jar.Performance");
-      Class<?> modsClass = Class.forName("pe.nanamochi.rosu_pp_jar.Mods");
+      // Load beatmap from file using rosu-pp-jar
+      io.github.nanamochi.rosu_pp_jar.Beatmap beatmap = 
+          io.github.nanamochi.rosu_pp_jar.Beatmap.fromPath(osuFile.getAbsolutePath());
 
-      logger.info("✓ rosu-pp-jar classes loaded successfully");
+      logger.info("✓ Beatmap loaded by rosu-pp-jar");
+      
+      // Create Performance calculator
+      Performance performance = Performance.create(beatmap);
+      logger.debug("✓ Performance calculator created");
 
-      // Parse beatmap using Beatmap.fromPath(String path)
-      Object beatmap = beatmapClass
-          .getMethod("fromPath", String.class)
-          .invoke(null, osuFile.getAbsolutePath());
-
-      logger.info("✓ Beatmap parsed by rosu-pp");
-
-      // Create Mods object from bits
-      Object modsObj = null;
+      // Set mods if any - MUST be done first!
       if (mods > 0) {
-        modsObj = modsClass
-            .getMethod("fromBits", Integer.class)
-            .invoke(null, mods);
-        logger.info("✓ Mods object created from bits: {}", mods);
+        Mods modsObj = Mods.fromBits(mods);
+        performance.setMods(modsObj);
+        logger.debug("✓ Mods set: {} (bits)", mods);
       }
 
-      // Create Performance object using Performance.create(Beatmap)
-      Object performance = performanceClass
-          .getMethod("create", beatmapClass)
-          .invoke(null, beatmap);
+      // Set the accuracy calculated from hits (matches what banchopy does)
+      performance.setAccuracy(accuracy);
+      logger.debug("✓ Accuracy set: {}", String.format("%.2f", accuracy));
 
-      // Set score parameters using setter methods
-      performanceClass.getMethod("setAccuracy", Double.class)
-          .invoke(performance, accuracy);
+      // Set combo
+      performance.setCombo(maxCombo);
+      logger.debug("✓ Combo set: {}", maxCombo);
 
-      performanceClass.getMethod("setCombo", Integer.class)
-          .invoke(performance, maxCombo);
+      // Set misses - this is critical for PP calculation
+      performance.setMisses(nmiss);
+      logger.debug("✓ Misses set: {}", nmiss);
 
-      performanceClass.getMethod("setMisses", Integer.class)
-          .invoke(performance, nmiss);
+      logger.info("✓ Score parameters set (SAME AS banchopy):");
+      logger.info("    accuracy: {} (derived from n300={}, n100={}, n50={}, nmiss={})", 
+          String.format("%.2f", accuracy), n300, n100, n50, nmiss);
+      logger.info("    combo: {}", maxCombo);
+      logger.info("    misses: {}", nmiss);
+      logger.info("    mods: {}", mods);
 
-      if (modsObj != null) {
-        performanceClass.getMethod("setMods", modsClass)
-            .invoke(performance, modsObj);
-      }
-
-      logger.info("✓ Score parameters set: accuracy={}, combo={}, misses={}, mods={}", 
-          accuracy, maxCombo, nmiss, mods);
-
-      // Calculate PP using calculate() method
-      Double pp = (Double) performanceClass
-          .getMethod("calculate")
-          .invoke(performance);
-
-      logger.info("✓ PP from rosu-pp: {}", String.format("%.2f", pp));
+      // Calculate PP
+      PerformanceAttributes perfAttrs = performance.calculate();
+      double pp = perfAttrs.pp();
       
-      // Clean up resources
-      if (performance instanceof AutoCloseable) {
-        ((AutoCloseable) performance).close();
-      }
-      if (beatmap instanceof AutoCloseable) {
-        ((AutoCloseable) beatmap).close();
-      }
-      if (modsObj != null && modsObj instanceof AutoCloseable) {
-        ((AutoCloseable) modsObj).close();
-      }
-      
-      return pp != null ? pp : 0.0;
+      logger.debug("  - Raw PP value from rosu-pp: {}", String.format("%.2f", pp));
+      logger.debug("  - Stars: {}", String.format("%.2f", perfAttrs.difficultyAttributes().stars()));
 
-    } catch (ClassNotFoundException e) {
-      logger.error("❌ rosu-pp-jar classes not found: {}", e.getMessage());
-      logger.error("   Make sure rosu-pp-jar is in the classpath");
+      logger.info("✓ PP calculated successfully: {} pp at {} stars", 
+          String.format("%.2f", pp),
+          String.format("%.2f", perfAttrs.difficultyAttributes().stars()));
+      return pp;
+
+    } catch (RosuException e) {
+      logger.error("❌ RosuException while calculating PP: {}", e.getMessage());
+      logger.error("   Rosu error details: {}", e);
+      logger.debug("   Full exception: ", e);
       return 0.0;
     } catch (Exception e) {
-      logger.error("❌ Error using rosu-pp-jar: {}", e.getMessage());
-      e.printStackTrace();
+      logger.error("❌ Unexpected error calculating PP: {} - {}", e.getClass().getName(), e.getMessage());
+      logger.debug("   Full stack trace: ", e);
       return 0.0;
     }
   }
@@ -234,12 +166,18 @@ public class PerformancePointsService {
 
       File cachedFile = cachePath.resolve(beatmap.getMd5() + ".osu").toFile();
 
-      if (cachedFile.exists()) {
-        logger.info("✓ Using cached beatmap file");
+      if (cachedFile.exists() && cachedFile.length() > 0) {
+        logger.info("✓ Using cached beatmap file ({}B)", cachedFile.length());
         return cachedFile;
       }
 
-      Integer beatmapId = beatmap.getId();
+      // Delete corrupted cache file if it exists and is 0 bytes
+      if (cachedFile.exists() && cachedFile.length() == 0) {
+        logger.warn("⚠️ Found corrupted cache file (0 bytes), removing");
+        cachedFile.delete();
+      }
+
+      Integer beatmapId = beatmap.getBeatmapId();
       if (beatmapId == null || beatmapId == 0) {
         logger.warn("⚠️ Beatmap ID not available");
         return null;
@@ -248,13 +186,24 @@ public class PerformancePointsService {
       String downloadUrl = OSU_BEATMAP_URL + beatmapId;
       logger.info("📥 Downloading from: {}", downloadUrl);
 
-      downloadFile(downloadUrl, cachedFile);
+      if (!downloadFile(downloadUrl, cachedFile)) {
+        logger.error("❌ Failed to download beatmap file");
+        // Delete the corrupted/empty file
+        if (cachedFile.exists()) {
+          cachedFile.delete();
+        }
+        return null;
+      }
 
-      if (cachedFile.exists()) {
-        logger.info("✓ Beatmap cached");
+      if (cachedFile.exists() && cachedFile.length() > 0) {
+        logger.info("✓ Beatmap cached ({}B)", cachedFile.length());
         return cachedFile;
       }
 
+      logger.error("❌ Beatmap file is empty after download");
+      if (cachedFile.exists()) {
+        cachedFile.delete();
+      }
       return null;
 
     } catch (IOException e) {
@@ -263,10 +212,76 @@ public class PerformancePointsService {
     }
   }
 
-  private void downloadFile(String urlString, File destination) throws IOException {
-    try (var in = new URL(urlString).openStream()) {
-      Files.copy(in, destination.toPath());
+  @SuppressWarnings("deprecation")
+  private boolean downloadFile(String urlString, File destination) {
+    int maxRetries = 3;
+    int retryDelay = 1000; // Start with 1 second
+    
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        logger.info("📥 Download attempt {}/{} from: {}", attempt, maxRetries, urlString);
+        
+        var conn = new URL(urlString).openConnection();
+        conn.setConnectTimeout(15000); // 15 second timeout
+        conn.setReadTimeout(15000);
+        conn.setRequestProperty("User-Agent", "banchus/1.0");
+        
+        // Check response code
+        if (conn instanceof java.net.HttpURLConnection) {
+          java.net.HttpURLConnection httpConn = (java.net.HttpURLConnection) conn;
+          int responseCode = httpConn.getResponseCode();
+          logger.info("   Response code: {}", responseCode);
+          
+          if (responseCode != 200) {
+            logger.warn("⚠️ HTTP error {} on attempt {}/{}", responseCode, attempt, maxRetries);
+            if (attempt < maxRetries) {
+              Thread.sleep(retryDelay);
+              retryDelay *= 2; // Exponential backoff
+              continue;
+            }
+            return false;
+          }
+        }
+
+        try (var in = conn.getInputStream()) {
+          long bytesCopied = Files.copy(in, destination.toPath());
+          logger.info("✓ Downloaded {} bytes", bytesCopied);
+          
+          if (bytesCopied == 0) {
+            logger.warn("⚠️ Downloaded file is empty on attempt {}/{}", attempt, maxRetries);
+            if (attempt < maxRetries) {
+              destination.delete();
+              Thread.sleep(retryDelay);
+              retryDelay *= 2;
+              continue;
+            }
+            return false;
+          }
+          
+          return true;
+        }
+        
+      } catch (InterruptedException e) {
+        logger.warn("⚠️ Download interrupted on attempt {}/{}", attempt, maxRetries);
+        Thread.currentThread().interrupt();
+        return false;
+      } catch (IOException e) {
+        logger.warn("⚠️ Error downloading beatmap on attempt {}/{}: {}", attempt, maxRetries, e.getMessage());
+        
+        if (attempt < maxRetries) {
+          try {
+            Thread.sleep(retryDelay);
+            retryDelay *= 2;
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            return false;
+          }
+        }
+      }
     }
+    
+    logger.error("❌ Failed to download beatmap after {} attempts", maxRetries);
+    return false;
   }
 
   @Cacheable(value = "beatmapStars", key = "#mapMd5")

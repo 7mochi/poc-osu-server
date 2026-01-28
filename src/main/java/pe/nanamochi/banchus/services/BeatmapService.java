@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.adapters.OsuApiV2Adapter;
+import pe.nanamochi.banchus.config.ScoringConfig;
+import pe.nanamochi.banchus.entities.BeatmapStatus;
 import pe.nanamochi.banchus.entities.db.Beatmap;
 import pe.nanamochi.banchus.repositories.BeatmapRepository;
 
@@ -26,6 +28,8 @@ public class BeatmapService {
   @Autowired private BeatmapRepository beatmapRepository;
 
   @Autowired private OsuApiV2Adapter osuApiAdapter;
+
+  @Autowired private ScoringConfig scoringConfig;
 
   /**
    * Get beatmap from local DB or fetch from osu! API v2.
@@ -78,7 +82,7 @@ public class BeatmapService {
         .creator("Unknown")
         .version("Unknown")
         .status(0) // Unranked
-        .setId(0)
+        .beatmapsetId(0)
         .cs(0f)
         .ar(0f)
         .od(0f)
@@ -97,25 +101,29 @@ public class BeatmapService {
   }
 
   /**
-   * Determine if a beatmap awards ranked score and PP.
-   * In osu! convention:
-   * - 0 = Unranked (no ranked score or PP)
-   * - 1 = Ranked (awards both)
-   * - 2 = Approved (awards both)
-   * - 3 = Loved (awards ranked score only, no PP)
+   * Determine if a beatmap contributes to player PP based on scoring config.
+   * Uses BeatmapStatus enum and ScoringConfig to determine if scores on this
+   * beatmap count towards the player's ranked PP.
    *
    * @param beatmap The beatmap to check
-   * @return true if beatmap is Ranked (1), Approved (2), or Loved (3)
+   * @return true if beatmap status is configured to contribute to PP
    */
   public boolean isBeatmapRanked(Beatmap beatmap) {
     if (beatmap == null) {
       return false;
     }
 
-    // Status 1 = Ranked, 2 = Approved, 3 = Loved
-    boolean ranked = beatmap.getStatus() >= 1 && beatmap.getStatus() <= 3;
-    logger.info("  Beatmap status: {} | Is ranked/approved/loved: {}", beatmap.getStatus(), ranked);
-    return ranked;
+    try {
+      BeatmapStatus status = BeatmapStatus.fromValue(beatmap.getStatus());
+      boolean contributesToPP = scoringConfig.contributesToPP(status);
+      logger.info("  Beatmap status: {} ({}) | Contributes to PP: {} (configured statuses: {})", 
+          beatmap.getStatus(), status.getDisplayName(), contributesToPP, 
+          scoringConfig.getPpContributingStatuses());
+      return contributesToPP;
+    } catch (IllegalArgumentException e) {
+      logger.warn("  Unknown beatmap status: {} - treating as unranked", beatmap.getStatus());
+      return false;
+    }
   }
 
   /**

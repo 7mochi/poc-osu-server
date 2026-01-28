@@ -8,7 +8,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.adapters.OsuApiV2Adapter;
+import pe.nanamochi.banchus.config.ScoringConfig;
+import pe.nanamochi.banchus.entities.BeatmapStatus;
 import pe.nanamochi.banchus.entities.Mode;
+import pe.nanamochi.banchus.entities.ScoreStatus;
 import pe.nanamochi.banchus.entities.db.Beatmap;
 import pe.nanamochi.banchus.entities.db.Score;
 import pe.nanamochi.banchus.entities.db.Stat;
@@ -52,6 +55,8 @@ public class ScoreService {
   @Autowired private StatService statService;
 
   @Autowired private PerformancePointsService ppService;
+
+  @Autowired private ScoringConfig scoringConfig;
 
   /**
    * Save a score submission.
@@ -103,16 +108,13 @@ public class ScoreService {
     logger.info("  📊 Calculated PP: {}", String.format("%.2f", calculatedPP));
 
     // Determine submission status based on whether score was passed
-    // 0 = FAILED (not completed)
-    // 1 = PENDING (not yet submitted to leaderboard)
-    // 2 = SUBMITTED (completed and visible in leaderboard)
     int status;
     if (!parsedScore.passed) {
-      status = 0; // FAILED
+      status = ScoreStatus.FAILED.getValue();
       logger.info("ℹ Score not passed, marking as FAILED");
     } else {
-      status = 2; // SUBMITTED (visible in leaderboard)
-      logger.info("ℹ Score passed, marking as SUBMITTED");
+      status = ScoreStatus.BEST.getValue();
+      logger.info("ℹ Score passed, marking as BEST");
     }
 
     // Create and save score
@@ -248,7 +250,7 @@ public class ScoreService {
         .creator("Unknown")
         .version("Unknown")
         .status(0)
-        .setId(0)
+        .beatmapsetId(0)
         .cs(0f)
         .ar(0f)
         .od(0f)
@@ -408,8 +410,8 @@ public class ScoreService {
     }
     
     // Beatmap info line
-    response.append("beatmapId:").append(beatmap.getId()).append("|")
-        .append("beatmapSetId:").append(beatmap.getSetId()).append("|")
+    response.append("beatmapId:").append(beatmap.getBeatmapId()).append("|")
+        .append("beatmapSetId:").append(beatmap.getBeatmapsetId()).append("|")
         .append("beatmapPlaycount:").append(playcount).append("|")
         .append("beatmapPasscount:").append(passcount).append("|")
         .append("approvedDate:").append(beatmap.getLastUpdate()).append("|")
@@ -417,7 +419,7 @@ public class ScoreService {
     
     // Beatmap ranking chart
     response.append("|chartId:beatmap|")
-        .append("chartUrl:https://osu.ppy.sh/beatmapsets/").append(beatmap.getSetId()).append("|")
+        .append("chartUrl:https://osu.ppy.sh/beatmapsets/").append(beatmap.getBeatmapsetId()).append("|")
         .append("chartName:Beatmap Ranking|")
         .append("rankBefore:|") // TODO: implement proper ranking
         .append("rankAfter:|")
@@ -586,14 +588,48 @@ public class ScoreService {
       return null;
     }
 
+    // Check for existing best score on this beatmap by this user
+    List<Score> existingBestScores = scoreRepository.findByMapMd5AndUserOrderByIdDesc(parsedScore.mapMd5, user);
+    Score previousBest = null;
+    if (!existingBestScores.isEmpty()) {
+      // Get the BEST score from the existing ones
+      for (Score s : existingBestScores) {
+        if (s.getStatus() == ScoreStatus.BEST.getValue() && s.getGameMode() == parsedScore.gamemode) {
+          previousBest = s;
+          break;
+        }
+      }
+    }
+
     // Calculate PP for the score
     double calculatedPP = calculateScorePP(parsedScore, beatmap);
     logger.info("  📊 Calculated PP: {}", String.format("%.2f", calculatedPP));
 
+    // Check if this is a better score than the previous best
+    if (previousBest != null && parsedScore.passed) {
+      logger.info("  ℹ️ User {} already has a best score on this beatmap (ID: {})", 
+          username, previousBest.getId());
+      logger.info("     Previous: {}pp | New: {}pp", 
+          String.format("%.2f", previousBest.getPp()), String.format("%.2f", calculatedPP));
+      
+      if (calculatedPP <= previousBest.getPp()) {
+        logger.warn("  ⚠️ New score is NOT better than previous best ({} <= {}pp), marking as ATTEMPT", 
+            String.format("%.2f", calculatedPP), String.format("%.2f", previousBest.getPp()));
+        logger.warn("     Score will still be saved but with ATTEMPT status (not best)");
+      } else {
+        logger.info("  ✅ New score is BETTER! ({} > {}pp), will replace previous best", 
+            String.format("%.2f", calculatedPP), String.format("%.2f", previousBest.getPp()));
+      }
+    }
+
     // Determine status based on passed flag
-    int status = 0; // FAILED by default
+    int status = ScoreStatus.FAILED.getValue(); // FAILED by default
     if (parsedScore.passed) {
-      status = 2; // BEST (will be updated later if not the best)
+      status = ScoreStatus.BEST.getValue(); // BEST (will be updated later if not the best)
+      // If there's a previous best and this new score is not better, mark as ATTEMPT (just another passed attempt)
+      if (previousBest != null && calculatedPP <= previousBest.getPp()) {
+        status = ScoreStatus.ATTEMPT.getValue(); // Not the best, just another passed attempt
+      }
     }
 
     // Create and save score with passed flag
@@ -628,11 +664,15 @@ public class ScoreService {
         parsedScore.score, String.format("%.2f", parsedScore.accuracy), parsedScore.maxCombo);
     logger.info("╚══════════════════════════════════════════════════════════╝");
 
-    // Update user statistics based on passed flag
+    // Update user statistics based on passed flag and whether it's a new best
     if (!parsedScore.passed) {
       logger.info("ℹ Score not passed, only incrementing playcount and total score");
       statService.updateStatsForFailedScore(user, parsedScore.score);
-    } else {
+    } else if (status == ScoreStatus.BEST.getValue()) {
+      // Only update stats if this is marked as BEST
+      // This means it's better than any previous score on this beatmap
+      logger.info("✅ Score is NEW BEST - will update player statistics");
+      
       // Determine if this is a best score and if the beatmap is ranked
       boolean isBest = isNewBestScore(user, parsedScore.mapMd5, savedScore, parsedScore.gamemode);
       boolean isRanked = isBeatmapRanked(beatmap);
@@ -670,6 +710,10 @@ public class ScoreService {
           savedScore  // Pass the newly saved score to ensure it's included in calculations
 
       );
+    } else {
+      // Score not BEST (ATTEMPT status) - don't update stats, just record the attempt
+      logger.info("⚠️ Score is NOT better than previous best - only recording as attempt, not updating stats");
+      statService.updateStatsForFailedScore(user, parsedScore.score);
     }
 
     return savedScore;
@@ -681,6 +725,12 @@ public class ScoreService {
    * - Beatmap ranking chart (before/after for this score on this beatmap)
    * - Overall ranking chart (before/after for global stats)
    * - New achievements
+   * 
+   * Response format (EXACTLY as per bancho.py):
+   * beatmapId:X|beatmapSetId:X|beatmapPlaycount:X|beatmapPasscount:X|approvedDate:X|\n
+   * |chartId:beatmap|chartUrl:...|chartName:...|rankBefore:X|rankAfter:X|...|onlineScoreId:X|\n
+   * |chartId:overall|chartUrl:...|chartName:...|rankBefore:X|rankAfter:X|...|ppAfter:X|
+   * achievements-new:
    *
    * @param score The saved score
    * @param beatmap The beatmap
@@ -691,7 +741,7 @@ public class ScoreService {
    * @param globalRankAfter Global rank AFTER
    * @param previousBestScore Previous best score on this beatmap (if any)
    * @param parsedScore The parsed score data
-   * @return Formatted response string
+   * @return Formatted response string (EXACTLY matching bancho.py format)
    */
   private String buildCompleteScoreResponse(
       Score score, Beatmap beatmap, User user,
@@ -701,15 +751,20 @@ public class ScoreService {
     
     StringBuilder response = new StringBuilder();
 
-    // Beatmap info
-    response.append("beatmapId:").append(beatmap.getId()).append("|")
-        .append("beatmapSetId:").append(beatmap.getSetId()).append("|")
-        .append("beatmapPlaycount:").append(beatmap.getPlaycount() != null ? beatmap.getPlaycount() : 0).append("|")
-        .append("beatmapPasscount:").append(beatmap.getPasscount() != null ? beatmap.getPasscount() : 0).append("|")
+    // Beatmap info line (LINE 1 in bancho.py response)
+    Integer playcount = beatmap.getPlaycount();
+    Integer passcount = beatmap.getPasscount();
+    if (playcount == null) playcount = 0;
+    if (passcount == null) passcount = 0;
+    
+    response.append("beatmapId:").append(beatmap.getBeatmapId()).append("|")
+        .append("beatmapSetId:").append(beatmap.getBeatmapsetId()).append("|")
+        .append("beatmapPlaycount:").append(playcount).append("|")
+        .append("beatmapPasscount:").append(passcount).append("|")
         .append("approvedDate:").append(beatmap.getLastUpdate()).append("|")
         .append("\n");
     
-    // Beatmap ranking chart
+    // Beatmap ranking chart (LINE 2 in bancho.py response)
     String beatmapRankBefore = "";
     String beatmapRankAfter = "";
     int beatmapRankedScoreBefore = 0;
@@ -739,7 +794,7 @@ public class ScoreService {
     }
     
     response.append("|chartId:beatmap|")
-        .append("chartUrl:https://osu.ppy.sh/beatmapsets/").append(beatmap.getSetId()).append("|")
+        .append("chartUrl:https://osu.ppy.sh/beatmapsets/").append(beatmap.getBeatmapsetId()).append("|")
         .append("chartName:Beatmap Ranking|")
         .append("rankBefore:").append(beatmapRankBefore).append("|")
         .append("rankAfter:").append(beatmapRankAfter).append("|")
@@ -756,38 +811,43 @@ public class ScoreService {
         .append("onlineScoreId:").append(score.getId()).append("|")
         .append("\n");
     
-    // Overall ranking chart (with BEFORE/AFTER values like bancho.py)
+    // Overall ranking chart (LINE 3+ in bancho.py response)
+    // CRITICAL: Must match EXACTLY what bancho.py produces
     response.append("|chartId:overall|")
         .append("chartUrl:https://osu.ppy.sh/u/").append(user.getId()).append("|")
         .append("chartName:Overall Ranking|")
         .append("rankBefore:").append(globalRankBefore).append("|")
         .append("rankAfter:").append(globalRankAfter).append("|")
-        .append("rankedScoreBefore:").append(previousStats.getRankedScore()).append("|")
-        .append("rankedScoreAfter:").append(currentStats.getRankedScore()).append("|")
-        .append("totalScoreBefore:").append(previousStats.getTotalScore()).append("|")
-        .append("totalScoreAfter:").append(currentStats.getTotalScore()).append("|")
-        .append("maxComboBefore:").append(previousStats.getHighestCombo()).append("|")
-        .append("maxComboAfter:").append(currentStats.getHighestCombo()).append("|")
-        .append("accuracyBefore:").append(String.format("%.2f", previousStats.getAccuracy())).append("|")
-        .append("accuracyAfter:").append(String.format("%.2f", currentStats.getAccuracy())).append("|")
-        .append("ppBefore:").append(previousStats.getPerformancePoints()).append("|")
-        .append("ppAfter:").append(currentStats.getPerformancePoints()).append("|");
+        .append("rankedScoreBefore:").append(previousStats != null ? previousStats.getRankedScore() : 0).append("|")
+        .append("rankedScoreAfter:").append(currentStats != null ? currentStats.getRankedScore() : 0).append("|")
+        .append("totalScoreBefore:").append(previousStats != null ? previousStats.getTotalScore() : 0).append("|")
+        .append("totalScoreAfter:").append(currentStats != null ? currentStats.getTotalScore() : 0).append("|")
+        .append("maxComboBefore:").append(previousStats != null ? previousStats.getHighestCombo() : 0).append("|")
+        .append("maxComboAfter:").append(currentStats != null ? currentStats.getHighestCombo() : 0).append("|")
+        .append("accuracyBefore:").append(previousStats != null ? String.format("%.2f", previousStats.getAccuracy()) : "0.00").append("|")
+        .append("accuracyAfter:").append(currentStats != null ? String.format("%.2f", currentStats.getAccuracy()) : "0.00").append("|")
+        .append("ppBefore:").append(previousStats != null ? previousStats.getPerformancePoints() : 0).append("|")
+        .append("ppAfter:").append(currentStats != null ? currentStats.getPerformancePoints() : 0).append("|");
     
-    // No new achievements for now
+    // Achievements section (NO trailing newline!)
     response.append("achievements-new:");
     
+    String responseStr = response.toString();
     logger.info("✓ Response built with BEFORE/AFTER stats:");
-    logger.info("  Beatmap - Rank: {} -> {}", 
-        beatmapRankBefore.isEmpty() ? "N/A" : beatmapRankBefore, 
-        beatmapRankAfter.isEmpty() ? "N/A" : beatmapRankAfter);
-    logger.info("  Beatmap - PP: {}pp -> {}pp", beatmapPpBefore, Math.round(score.getPp()));
-    logger.info("  Overall - Rank: {} -> {}", globalRankBefore, globalRankAfter);
-    logger.info("  Overall - PP: {}pp -> {}pp", previousStats.getPerformancePoints(), currentStats.getPerformancePoints());
-    logger.info("  Overall - Accuracy: {} -> {}", 
-        String.format("%.2f%%", previousStats.getAccuracy()), 
-        String.format("%.2f%%", currentStats.getAccuracy()));
+    logger.info("  Response length: {} bytes", responseStr.length());
+    if (previousStats != null && currentStats != null) {
+      logger.info("  Beatmap - Rank: {} -> {}", 
+          beatmapRankBefore.isEmpty() ? "N/A" : beatmapRankBefore, 
+          beatmapRankAfter.isEmpty() ? "N/A" : beatmapRankAfter);
+      logger.info("  Beatmap - PP: {}pp -> {}pp", beatmapPpBefore, Math.round(score.getPp()));
+      logger.info("  Overall - Rank: {} -> {}", globalRankBefore, globalRankAfter);
+      logger.info("  Overall - PP: {}pp -> {}pp", previousStats.getPerformancePoints(), currentStats.getPerformancePoints());
+      logger.info("  Overall - Accuracy: {} -> {}", 
+          String.format("%.2f%%", previousStats.getAccuracy()), 
+          String.format("%.2f%%", currentStats.getAccuracy()));
+    }
     
-    return response.toString();
+    return responseStr;
   }
 
   /**
@@ -872,10 +932,13 @@ public class ScoreService {
    * @return true if beatmap status is RANKED (1), APPROVED (2), or LOVED (3)
    */
   private boolean isBeatmapRanked(Beatmap beatmap) {
-    // In bancho.py/osu! convention: 1=Ranked, 2=Approved, 3=Loved
-    boolean ranked = beatmap.getStatus() >= 1 && beatmap.getStatus() <= 3;
-    logger.info("  Beatmap status: {} | Is ranked/approved/loved: {}", beatmap.getStatus(), ranked);
-    return ranked;
+    // Check if this beatmap status contributes to PP based on scoring config
+    BeatmapStatus status = BeatmapStatus.fromValue(beatmap.getStatus());
+    boolean contributesToPP = scoringConfig.contributesToPP(status);
+    logger.info("  Beatmap status: {} ({}) | Contributes to PP: {} (configured statuses: {})", 
+        beatmap.getStatus(), status.getDisplayName(), contributesToPP, 
+        scoringConfig.getPpContributingStatuses());
+    return contributesToPP;
   }
 
   /**

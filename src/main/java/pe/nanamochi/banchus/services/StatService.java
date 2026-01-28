@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import pe.nanamochi.banchus.config.ScoringConfig;
+import pe.nanamochi.banchus.entities.BeatmapStatus;
 import pe.nanamochi.banchus.entities.Mode;
 import pe.nanamochi.banchus.entities.db.Score;
 import pe.nanamochi.banchus.entities.db.Stat;
@@ -21,6 +23,8 @@ public class StatService {
   @Autowired private StatRepository statRepository;
 
   @Autowired private ScoreRepository scoreRepository;
+
+  @Autowired private ScoringConfig scoringConfig;
 
   public List<Stat> createAllGamemodes(User user) {
     // 0 = standard
@@ -133,17 +137,21 @@ public class StatService {
 
     // Update accuracy and PP using weighted average formula (same as osu! official servers)
     // This recalculates from ALL best scores (top 100), including the newly submitted score
-    logger.info("🔄 Updating weighted accuracy and PP for user {} in mode {}", user.getUsername(), gamemode);
-    
-    // Always recalculate from scratch (accuracy and PP depend on the entire top 100 list)
-    updateWeightedAccuracy(user, stat, gamemode, newScore);
-    updateWeightedPP(user, stat, gamemode, newScore);
-    
-    // Update rankedScore based on the recalculated top 100
-    // ONLY recalculate if this is a best score AND the beatmap is ranked/approved/loved
-    // Otherwise, rankedScore remains unchanged (the new score doesn't affect it)
-    if (isBest && isRanked) {
-      updateRankedScore(user, stat, gamemode);
+    // ONLY UPDATE if the beatmap is ranked/approved/loved
+    // For unranked/pending/graveyard beatmaps, accuracy and PP remain unchanged
+    if (isRanked) {
+      logger.info("🔄 Updating weighted accuracy and PP for user {} in mode {} (beatmap is ranked)", user.getUsername(), gamemode);
+      
+      // Recalculate from scratch (accuracy and PP depend on the entire top 100 list of ranked maps)
+      updateWeightedAccuracy(user, stat, gamemode, newScore);
+      updateWeightedPP(user, stat, gamemode, newScore);
+      
+      // Update rankedScore based on the recalculated top 100
+      if (isBest) {
+        updateRankedScore(user, stat, gamemode);
+      }
+    } else {
+      logger.info("ℹ Skipping accuracy/PP update for user {} - beatmap is not ranked/approved/loved", user.getUsername());
     }
     
     updateGlobalRank(user, stat, gamemode);
@@ -172,11 +180,14 @@ public class StatService {
     // Get all best scores for this user/mode (on ranked beatmaps only)
     List<Score> allScores = scoreRepository.findBestScoresForUserInMode((long) user.getId(), gamemode.getValue());
     
+    // Filter to only beatmaps that contribute to PP based on scoring config
+    allScores = filterScoresByBeatmapStatus(allScores);
+    
     // Ensure the new score is included (in case of transaction/cache issues)
     if (newScore != null && newScore.getStatus() == 2) {
       boolean alreadyExists = allScores.stream()
           .anyMatch(s -> s.getId().equals(newScore.getId()));
-      if (!alreadyExists) {
+      if (!alreadyExists && newScore.getBeatmap() != null && scoringConfig.contributesToPP(newScore.getBeatmap().getStatus())) {
         allScores.add(newScore);
       }
     }
@@ -244,11 +255,14 @@ public class StatService {
     // Get all best scores for this user/mode (on ranked beatmaps only)
     List<Score> allScores = scoreRepository.findBestScoresForUserInMode((long) user.getId(), gamemode.getValue());
     
+    // Filter to only beatmaps that contribute to PP based on scoring config
+    allScores = filterScoresByBeatmapStatus(allScores);
+    
     // Ensure the new score is included (in case of transaction/cache issues)
     if (newScore != null && newScore.getStatus() == 2) {
       boolean alreadyExists = allScores.stream()
           .anyMatch(s -> s.getId().equals(newScore.getId()));
-      if (!alreadyExists) {
+      if (!alreadyExists && newScore.getBeatmap() != null && scoringConfig.contributesToPP(newScore.getBeatmap().getStatus())) {
         allScores.add(newScore);
       }
     }
@@ -407,6 +421,30 @@ public class StatService {
     result.sort((a, b) -> Float.compare(b.getPp(), a.getPp()));
     
     return result;
+  }
+
+  /**
+   * Filter scores to only include those on beatmaps that contribute to PP.
+   * Uses the ScoringConfig to determine which beatmap statuses count.
+   * 
+   * @param scores The scores to filter
+   * @return Filtered list containing only scores on beatmaps that contribute to PP
+   */
+  private List<Score> filterScoresByBeatmapStatus(List<Score> scores) {
+    return scores.stream()
+        .filter(score -> {
+          if (score.getBeatmap() == null) {
+            logger.debug("Score {} has no beatmap object, skipping", score.getId());
+            return false;
+          }
+          int status = score.getBeatmap().getStatus();
+          boolean contributes = scoringConfig.contributesToPP(status);
+          if (!contributes) {
+            logger.debug("Score {} on beatmap status {} doesn't contribute to PP, filtering out", score.getId(), status);
+          }
+          return contributes;
+        })
+        .toList();
   }
 
 }

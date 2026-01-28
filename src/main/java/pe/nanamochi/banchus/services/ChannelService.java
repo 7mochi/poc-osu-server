@@ -1,0 +1,41 @@
+package pe.nanamochi.banchus.services;
+
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import pe.nanamochi.banchus.entities.db.Channel;
+import pe.nanamochi.banchus.repositories.ChannelRepository;
+
+@Service
+public class ChannelService {
+
+  @Autowired private ChannelRepository channelRepository;
+
+  public List<Channel> getAllChannels() {
+    return channelRepository.findAll();
+  }
+
+  public List<Channel> findByAutoJoin(boolean autoJoin) {
+    return channelRepository.findByAutoJoin(autoJoin);
+  }
+
+  public Channel findByName(String name) {
+    return channelRepository.findByName(name);
+  }
+
+  public boolean canReadChannel(Channel channel, int userPrivileges) {
+    if (channel.getReadPrivileges() == 0) {
+      return true;
+    }
+
+    return (userPrivileges & channel.getReadPrivileges()) == 0;
+  }
+
+  public boolean canWriteChannel(Channel channel, int userPrivileges) {
+    if (channel.getWritePrivileges() == 0) {
+      return true;
+    }
+
+    return (userPrivileges & channel.getWritePrivileges()) != 0;
+  }
+}

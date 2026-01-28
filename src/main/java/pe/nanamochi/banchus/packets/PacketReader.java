@@ -53,6 +53,10 @@ public class PacketReader {
       return readReceiveUpdates(stream);
     } else if (packetId == Packets.OSU_USER_STATS_REQUEST.getId()) {
       return readUserStatsRequest(stream);
+    } else if (packetId == Packets.OSU_CHANNEL_JOIN.getId()) {
+      return readChannelJoin(stream);
+    } else if (packetId == Packets.OSU_CHANNEL_LEAVE.getId()) {
+      return readChannelLeave(stream);
     } else {
       logger.warn("Packet id {} not supported yet.", packetId);
       return null;
@@ -125,5 +129,17 @@ public class PacketReader {
   public UserStatsRequestPacket readUserStatsRequest(InputStream stream) throws IOException {
     // TODO: idk
     return new UserStatsRequestPacket();
+  }
+
+  public ChannelJoinPacket readChannelJoin(InputStream stream) throws IOException {
+    ChannelJoinPacket packet = new ChannelJoinPacket();
+    packet.setName(reader.readString(stream));
+    return packet;
+  }
+
+  public ChannelLeavePacket readChannelLeave(InputStream stream) throws IOException {
+    ChannelLeavePacket packet = new ChannelLeavePacket();
+    packet.setName(reader.readString(stream));
+    return packet;
   }
 }

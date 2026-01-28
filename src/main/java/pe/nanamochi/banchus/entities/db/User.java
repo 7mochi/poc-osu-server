@@ -20,4 +20,5 @@ public class User {
   private CountryCode country;
   private boolean restricted;
   private Instant silenceEnd;
+  private int privileges = 0;
 }

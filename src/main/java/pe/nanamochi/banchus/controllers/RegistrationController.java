@@ -1,6 +1,5 @@
 package pe.nanamochi.banchus.controllers;
 
-import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import org.slf4j.Logger;
@@ -28,7 +27,7 @@ public class RegistrationController {
   public ResponseEntity<String> registerAccount(
       @RequestHeader MultiValueMap<String, String> headers,
       @RequestParam MultiValueMap<String, String> paramMap)
-      throws NoSuchAlgorithmException, UnknownHostException {
+      throws NoSuchAlgorithmException {
     if (!paramMap.containsKey("user[username]")
         || !paramMap.containsKey("user[user_email]")
         || !paramMap.containsKey("user[password]")) {

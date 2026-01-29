@@ -1,26 +1,10 @@
-c.{$OSU_DOMAIN_URL}, ce.{$OSU_DOMAIN_URL}, c4.{$OSU_DOMAIN_URL}, osu.{$OSU_DOMAIN_URL}, b.{$OSU_DOMAIN_URL}, api.{$OSU_DOMAIN_URL} {
+{$OSU_DOMAIN_URL}, c.{$OSU_DOMAIN_URL}, ce.{$OSU_DOMAIN_URL}, c4.{$OSU_DOMAIN_URL}, b.{$OSU_DOMAIN_URL}, api.{$OSU_DOMAIN_URL}, assets.{$OSU_DOMAIN_URL}, osu.{$OSU_DOMAIN_URL} {
     encode gzip
-    reverse_proxy * 127.0.0.1:{$APPLICATION_PORT} {
-        rewrite /bancho{uri}
+    reverse_proxy 127.0.0.1:{$APPLICATION_PORT} {
+        header_up Host {host}
         header_up X-Real-IP {remote_host}
         header_up X-Forwarded-For {remote_host}
-        header_up Host {host}
     }
-
-    request_body {
-        max_size 20MB
-    }
-}
-
-assets.{$OSU_DOMAIN_URL} {
-    encode gzip
-    reverse_proxy * 127.0.0.1:{$APPLICATION_PORT} {
-        rewrite /menu{uri}
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-For {remote_host}
-        header_up Host {host}
-    }
-
     request_body {
         max_size 20MB
     }

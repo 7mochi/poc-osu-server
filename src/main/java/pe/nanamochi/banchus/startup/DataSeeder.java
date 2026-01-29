@@ -34,26 +34,26 @@ public class DataSeeder implements CommandLineRunner {
   private void seedUsers() {
     if (userRepository.count() > 0) return;
 
-    User user = new User();
-    user.setUsername("test");
-    user.setEmail("test@gmail.com");
-    user.setPasswordMd5("098f6bcd4621d373cade4e832627b4f6"); // test
-    user.setCountry(CountryCode.KP);
-    user.setRestricted(false);
+      User user = new User();
+      user.setUsername("test");
+      user.setEmail("test@gmail.com");
+      user.setPasswordMd5("098f6bcd4621d373cade4e832627b4f6"); // test
+      user.setCountry(CountryCode.KP);
+      user.setRestricted(false);
 
-    userRepository.save(user);
-    statService.createAllGamemodes(user);
+      userRepository.save(user);
+      statService.createAllGamemodes(user);
 
-    User user2 = new User();
-    user2.setUsername("test2");
-    user2.setEmail("test2@gmail.com");
-    user2.setPasswordMd5("098f6bcd4621d373cade4e832627b4f6"); // test
-    user2.setCountry(CountryCode.AR);
-    user2.setRestricted(true);
+      User user2 = new User();
+      user2.setUsername("test2");
+      user2.setEmail("test2@gmail.com");
+      user2.setPasswordMd5("098f6bcd4621d373cade4e832627b4f6"); // test
+      user2.setCountry(CountryCode.AR);
+      user2.setRestricted(true);
 
-    userRepository.save(user2);
-    statService.createAllGamemodes(user2);
-  }
+      userRepository.save(user2);
+      statService.createAllGamemodes(user2);
+    }
 
   private void seedChannels() {
     if (channelRepository.count() > 0) return;

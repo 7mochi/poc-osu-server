@@ -1,5 +1,18 @@
 server:
     port: ${APPLICATION_PORT:8080}
+    servlet:
+      multipart:
+        max-file-size: 50MB
+        max-request-size: 50MB
+        file-size-threshold: 1MB
+    tomcat:
+      max-http-post-size: 52428800 # 50MB
+      max-connections: 200
+      threads:
+        max: 200
+        min-spare: 10
+      max-upload-size: 52428800
+      max-form-post-size: 52428800
 spring:
   config:
     import: optional:file:.env[.properties]
@@ -18,15 +31,30 @@ spring:
   jpa:
     hibernate:
       ddl-auto: ${JPA_HIBERNATE_DDL_AUTO:update}
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+      file-size-threshold: 1MB
 
 logging:
   level:
     root: ${LOG_LEVEL_ROOT:INFO}
     pe.nanamochi.banchus: ${LOG_LEVEL_BANCHUS:WARN}
 
+osu:
+  api:
+    client-id: ${OSU_API_CLIENT_ID:0}
+    client-secret: ${OSU_API_CLIENT_SECRET:}
+
 banchus:
   menu-icon:
     image-url: ${MENU_ICON_IMAGE_URL}
     redirect-url: ${MENU_ICON_REDIRECT_URL}
+  scoring:
+    # Beatmap statuses that count towards PP (comma-separated list of integers)
+    # API v2 format: 1=Ranked, 2=Approved, 3=Qualified, 4=Loved, 0=Pending, -1=WIP, -2=Graveyard
+    pp-contributing-statuses: ${BEATMAP_PP_CONTRIBUTING_STATUSES:1,2}
+    
   seasonal-backgrounds:
     urls: ${SEASONAL_BACKGROUND_URLS:}

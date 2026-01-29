@@ -20,6 +20,7 @@ public class Stat {
   private int totalScore;
   private int rankedScore;
   private int performancePoints;
+  private int globalRank;
   private int playCount;
   private int playTime;
   private float accuracy;

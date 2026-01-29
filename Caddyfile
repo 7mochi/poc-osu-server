@@ -1,0 +1,13 @@
+c.bancho.local, ce.bancho.local, c4.bancho.local, osu.bancho.local, b.bancho.local, api.bancho.local {
+    encode gzip
+    reverse_proxy * 127.0.0.1:8080 {
+        rewrite /bancho{uri}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up Host {host}
+    }
+
+    request_body {
+        max_size 20MB
+    }
+}

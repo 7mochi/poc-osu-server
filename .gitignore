@@ -34,3 +34,7 @@ build/
 
 ### Environment Files ###
 .env
+start.sh
+
+### osudata ###
+.data/

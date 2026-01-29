@@ -12,6 +12,6 @@ public class LobbyPartPacket implements Packet {
 
   @Override
   public Packets getPacketType() {
-    return Packets.OSU_CHANNEL_LEAVE;
+    return Packets.OSU_LOBBY_PART;
   }
 }

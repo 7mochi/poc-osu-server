@@ -40,13 +40,13 @@ public class LoginController {
 
   @Autowired private PacketWriter packetWriter;
   @Autowired private PacketReader packetReader;
-  @Autowired private PacketHandler packetHandler;
   @Autowired private UserService userService;
   @Autowired private SessionService sessionService;
   @Autowired private StatService statService;
   @Autowired private ChannelService channelService;
   @Autowired private ChannelMembersRedisService channelMembersRedisService;
   @Autowired private PacketBundleService packetBundleService;
+  @Autowired private PacketHandler packetHandler;
 
   @PostMapping(value = "/", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<Resource> banchoHandler(

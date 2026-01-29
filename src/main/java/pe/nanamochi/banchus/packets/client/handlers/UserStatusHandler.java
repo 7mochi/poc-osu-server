@@ -1,0 +1,85 @@
+package pe.nanamochi.banchus.packets.client.handlers;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import pe.nanamochi.banchus.entities.Mods;
+import pe.nanamochi.banchus.entities.PacketBundle;
+import pe.nanamochi.banchus.entities.db.Session;
+import pe.nanamochi.banchus.entities.db.Stat;
+import pe.nanamochi.banchus.packets.AbstractPacketHandler;
+import pe.nanamochi.banchus.packets.PacketWriter;
+import pe.nanamochi.banchus.packets.Packets;
+import pe.nanamochi.banchus.packets.client.UserStatusPacket;
+import pe.nanamochi.banchus.packets.server.UserStatsPacket;
+import pe.nanamochi.banchus.services.PacketBundleService;
+import pe.nanamochi.banchus.services.SessionService;
+import pe.nanamochi.banchus.services.StatService;
+
+@Component
+public class UserStatusHandler extends AbstractPacketHandler<UserStatusPacket> {
+  private static final Logger logger = LoggerFactory.getLogger(UserStatusHandler.class);
+  @Autowired private PacketWriter packetWriter;
+  @Autowired private PacketBundleService packetBundleService;
+  @Autowired private StatService statService;
+  @Autowired private SessionService sessionService;
+
+  @Override
+  public Packets getPacketType() {
+    return Packets.OSU_USER_STATUS;
+  }
+
+  @Override
+  public Class<UserStatusPacket> getPacketClass() {
+    return UserStatusPacket.class;
+  }
+
+  @Override
+  public void handle(UserStatusPacket packet, Session session, ByteArrayOutputStream responseStream)
+      throws IOException {
+    logger.debug("Handling packet: {}", getPacketType());
+    // TODO: Check privileges
+
+    // Filter invalid mod combinations, this is a quirk of the osu! client,
+    // where it adjusts this value only after it sends the packet to the server,
+    // so we need to adjust
+    packet.setMods(Mods.filterInvalidModCombinations(packet.getMods(), packet.getMode()));
+
+    session.setAction(packet.getAction().getValue());
+    session.setInfoText(packet.getText());
+    session.setBeatmapMd5(packet.getBeatmapChecksum());
+    session.setMods(Mods.toBitmask(packet.getMods()));
+    session.setGamemode(packet.getMode());
+    session.setBeatmapId(packet.getBeatmapId());
+    session = sessionService.updateSession(session);
+
+    // TODO: Calculate global rank
+
+    Stat ownStats = statService.getStats(session.getUser(), packet.getMode());
+
+    // Send the stats update to all active osu sessions
+    for (Session otherSession : sessionService.getAllSessions()) {
+      ByteArrayOutputStream stream = new ByteArrayOutputStream();
+      packetWriter.writePacket(
+          stream,
+          new UserStatsPacket(
+              session.getUser().getId(),
+              session.getAction(),
+              session.getInfoText(),
+              session.getBeatmapMd5(),
+              session.getMods(),
+              session.getGamemode(),
+              session.getBeatmapId(),
+              ownStats.getRankedScore(),
+              ownStats.getAccuracy(),
+              ownStats.getPlayCount(),
+              ownStats.getTotalScore(),
+              727, // TODO: global rank
+              ownStats.getPerformancePoints()));
+      packetBundleService.enqueue(otherSession.getId(), new PacketBundle(stream.toByteArray()));
+    }
+  }
+}

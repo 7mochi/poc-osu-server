@@ -35,7 +35,7 @@ public class Beatmapset {
   @Column(nullable = true)
   private String creator;
 
-  @Column(nullable = true)
+  @Column(nullable = true, length = 512)
   private String tags = "";
 
   private BeatmapRankedStatus submissionStatus;
@@ -44,6 +44,7 @@ public class Beatmapset {
   private Instant submissionDate;
   private Instant approvedDate;
   private Instant lastUpdated;
+  private Instant lastOsuApiCheck;
   private int totalPlaycount;
   private int languageId; // TODO: enum?
   private int genreId; // TODO: enum?

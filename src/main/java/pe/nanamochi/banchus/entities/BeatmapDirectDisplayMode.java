@@ -18,6 +18,15 @@ public enum BeatmapDirectDisplayMode {
 
   private final int value;
 
+  public static BeatmapDirectDisplayMode fromValue(int value) {
+    for (BeatmapDirectDisplayMode mode : values()) {
+      if (mode.value == value) {
+        return mode;
+      }
+    }
+    throw new IllegalArgumentException("Unknown BeatmapDirectDisplayMode value: " + value);
+  }
+
   // TODO: Move this to a utility class like PrivilegesUtil
   public static int convertToOsuApiStatus(BeatmapDirectDisplayMode displayMode) {
     return switch (displayMode) {

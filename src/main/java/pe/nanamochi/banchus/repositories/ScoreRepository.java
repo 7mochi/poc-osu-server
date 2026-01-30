@@ -27,4 +27,8 @@ public interface ScoreRepository extends JpaRepository<Score, Integer> {
 
   Score findFirstByBeatmapAndUserAndSubmissionStatusOrderByPerformancePointsDesc(
       Beatmap beatmap, User user, SubmissionStatus submissionStatus);
+
+  List<Score>
+      findTop50ByBeatmapAndModeAndModsAndSubmissionStatusAndUser_RestrictedFalseOrderByScoreDesc(
+          Beatmap beatmap, Mode mode, int mods, SubmissionStatus submissionStatus);
 }

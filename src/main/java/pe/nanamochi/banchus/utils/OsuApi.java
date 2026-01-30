@@ -45,6 +45,20 @@ public class OsuApi {
     return !beatmaps.isEmpty() ? beatmaps.getFirst() : null;
   }
 
+  public Beatmap getBeatmap(int beatmapId) {
+    UriComponentsBuilder builder =
+        UriComponentsBuilder.fromUriString(BASE_URL + "/api/get_beatmaps")
+            .queryParam("b", beatmapId)
+            .queryParam("k", apiKey);
+
+    ResponseEntity<List<Beatmap>> response =
+        restTemplate.exchange(
+            builder.toUriString(), HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
+    List<Beatmap> beatmaps = response.getBody();
+
+    return !beatmaps.isEmpty() ? beatmaps.getFirst() : null;
+  }
+
   public List<Beatmap> getBeatmaps(int beatmapSetId) {
     UriComponentsBuilder builder =
         UriComponentsBuilder.fromUriString(BASE_URL + "/api/get_beatmaps")

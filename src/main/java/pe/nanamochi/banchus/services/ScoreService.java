@@ -47,4 +47,11 @@ public class ScoreService {
     return scoreRepository.findFirstByBeatmapAndUserAndSubmissionStatusOrderByPerformancePointsDesc(
         beatmap, user, SubmissionStatus.BEST);
   }
+
+  public List<Score> getBeatmapLeaderboard(
+      Beatmap beatmap, Mode mode, int mods, SubmissionStatus submissionStatus) {
+    return scoreRepository
+        .findTop50ByBeatmapAndModeAndModsAndSubmissionStatusAndUser_RestrictedFalseOrderByScoreDesc(
+            beatmap, mode, mods, submissionStatus);
+  }
 }

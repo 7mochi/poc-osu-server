@@ -1,15 +1,18 @@
 package pe.nanamochi.banchus.entities.osuapi;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.EntityListeners;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Data
 @NoArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class Beatmap {
 
   private Integer approved;

@@ -176,6 +176,8 @@ public class LeaderboardController {
           if (localBeatmap != null) {
             localBeatmap.setLastUpdated(b.getLastUpdate());
             localBeatmap.setStarRating(b.getDifficultyRating());
+            localBeatmap.setMd5(b.getFileMd5());
+            // TODO: add more fields to update
             beatmapService.update(localBeatmap);
           }
         }

@@ -47,6 +47,7 @@ public class LoginController {
   @Autowired private ChannelService channelService;
   @Autowired private ChannelMembersRedisService channelMembersRedisService;
   @Autowired private PacketBundleService packetBundleService;
+  @Autowired private RankingService rankingService;
 
   @PostMapping(value = "/", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<Resource> banchoHandler(
@@ -133,6 +134,8 @@ public class LoginController {
       ownOsuSession = sessionService.saveSession(ownOsuSession);
 
       Stat ownStats = statService.getStats(user, ownOsuSession.getGamemode());
+      int ownGlobalRank =
+          Math.toIntExact(rankingService.getGlobalRank(ownOsuSession.getGamemode(), user));
 
       if (ownStats == null) {
         packetWriter.writePacket(stream, new LoginReplyPacket(-1));
@@ -183,12 +186,11 @@ public class LoginController {
               user.getId(),
               user.getUsername(),
               ownOsuSession.getUtcOffset(),
-              CountryCode.fromCode(ownOsuSession.getCountry()).id(),
+              CountryCode.fromCode(ownOsuSession.getCountry()).getId(),
               0, // TODO: permissions
               ownOsuSession.getLatitude(),
               ownOsuSession.getLongitude(),
-              727 // TODO: global rank
-              ));
+              ownGlobalRank));
       packetWriter.writePacket(
           stream,
           new UserStatsPacket(
@@ -203,7 +205,7 @@ public class LoginController {
               ownStats.getAccuracy(),
               ownStats.getPlayCount(),
               ownStats.getTotalScore(),
-              727, // TODO: global rank
+              ownGlobalRank,
               ownStats.getPerformancePoints()));
 
       for (Session otherOsuSession : sessionService.getAllSessions()) {
@@ -211,8 +213,10 @@ public class LoginController {
           continue;
         }
 
-        // TODO: Get other session's global rank
-
+        int otherGlobalRank =
+            Math.toIntExact(
+                rankingService.getGlobalRank(
+                    otherOsuSession.getGamemode(), otherOsuSession.getUser()));
         Stat otherStats =
             statService.getStats(otherOsuSession.getUser(), otherOsuSession.getGamemode());
 
@@ -234,12 +238,11 @@ public class LoginController {
                 otherOsuSession.getUser().getId(),
                 otherOsuSession.getUser().getUsername(),
                 otherOsuSession.getUtcOffset(),
-                CountryCode.fromCode(otherOsuSession.getCountry()).id(),
+                CountryCode.fromCode(otherOsuSession.getCountry()).getId(),
                 0, // TODO: permissions
                 otherOsuSession.getLatitude(),
                 otherOsuSession.getLongitude(),
-                727 // TODO: global rank
-                ));
+                otherGlobalRank));
         packetWriter.writePacket(
             stream,
             new UserStatsPacket(
@@ -254,7 +257,7 @@ public class LoginController {
                 otherStats.getAccuracy(),
                 otherStats.getPlayCount(),
                 otherStats.getTotalScore(),
-                727, // TODO: global rank
+                otherGlobalRank,
                 otherStats.getPerformancePoints()));
 
         // Send our presence and stats to the other user
@@ -266,12 +269,11 @@ public class LoginController {
                   user.getId(),
                   user.getUsername(),
                   ownOsuSession.getUtcOffset(),
-                  CountryCode.fromCode(ownOsuSession.getCountry()).id(),
+                  CountryCode.fromCode(ownOsuSession.getCountry()).getId(),
                   0, // TODO: permissions
                   ownOsuSession.getLatitude(),
                   ownOsuSession.getLongitude(),
-                  727 // TODO: global rank
-                  ));
+                  ownGlobalRank));
           packetWriter.writePacket(
               otherStream,
               new UserStatsPacket(
@@ -286,7 +288,7 @@ public class LoginController {
                   ownStats.getAccuracy(),
                   ownStats.getPlayCount(),
                   ownStats.getTotalScore(),
-                  727, // TODO: global rank
+                  ownGlobalRank,
                   ownStats.getPerformancePoints()));
           packetBundleService.enqueue(
               otherOsuSession.getId(), new PacketBundle(otherStream.toByteArray()));

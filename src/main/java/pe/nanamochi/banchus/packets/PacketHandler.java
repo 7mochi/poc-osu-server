@@ -22,11 +22,7 @@ import pe.nanamochi.banchus.packets.server.ChannelAvailablePacket;
 import pe.nanamochi.banchus.packets.server.ChannelJoinSuccessPacket;
 import pe.nanamochi.banchus.packets.server.UserQuitPacket;
 import pe.nanamochi.banchus.packets.server.UserStatsPacket;
-import pe.nanamochi.banchus.services.ChannelMembersRedisService;
-import pe.nanamochi.banchus.services.ChannelService;
-import pe.nanamochi.banchus.services.PacketBundleService;
-import pe.nanamochi.banchus.services.SessionService;
-import pe.nanamochi.banchus.services.StatService;
+import pe.nanamochi.banchus.services.*;
 
 @Component
 public class PacketHandler {
@@ -38,6 +34,7 @@ public class PacketHandler {
   @Autowired private PacketBundleService packetBundleService;
   @Autowired private ChannelService channelService;
   @Autowired private ChannelMembersRedisService channelMembersService;
+  @Autowired private RankingService rankingService;
 
   public void handlePacket(Packet packet, Session session, ByteArrayOutputStream responseStream)
       throws IOException {
@@ -89,7 +86,8 @@ public class PacketHandler {
     // TODO: Calculate global rank
 
     Stat ownStats = statService.getStats(session.getUser(), packet.getMode());
-
+    int ownGlobal =
+        Math.toIntExact(rankingService.getGlobalRank(packet.getMode(), session.getUser()));
     // Send the stats update to all active osu sessions
     for (Session otherSession : sessionService.getAllSessions()) {
       ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -107,7 +105,7 @@ public class PacketHandler {
               ownStats.getAccuracy(),
               ownStats.getPlayCount(),
               ownStats.getTotalScore(),
-              727, // TODO: global rank
+              ownGlobal,
               ownStats.getPerformancePoints()));
       packetBundleService.enqueue(otherSession.getId(), new PacketBundle(stream.toByteArray()));
     }

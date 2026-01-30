@@ -30,9 +30,6 @@ logging:
   level:
     root: ${LOG_LEVEL_ROOT:INFO}
     pe.nanamochi.banchus: ${LOG_LEVEL_BANCHUS:WARN}
-   # org.springframework.web: DEBUG
-    #org.springframework.web.servlet.DispatcherServlet: DEBUG
-
 
 banchus:
   menu-icon:

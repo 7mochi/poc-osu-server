@@ -18,10 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import pe.nanamochi.banchus.entities.BeatmapRankedStatus;
-import pe.nanamochi.banchus.entities.Mode;
-import pe.nanamochi.banchus.entities.PacketBundle;
-import pe.nanamochi.banchus.entities.SubmissionStatus;
+import pe.nanamochi.banchus.entities.*;
 import pe.nanamochi.banchus.entities.db.*;
 import pe.nanamochi.banchus.entities.osuapi.Beatmap;
 import pe.nanamochi.banchus.packets.PacketWriter;
@@ -48,6 +45,7 @@ public class ScoringController {
   @Autowired private PacketBundleService packetBundleService;
   @Autowired private ChannelService channelService;
   @Autowired private ChannelMembersRedisService channelMembersRedisService;
+  @Autowired private RankingService rankingService;
 
   @PostMapping(
       value = "/osu-submit-modular-selector.php",
@@ -62,7 +60,6 @@ public class ScoringController {
       @RequestParam(value = "s", required = false) String clientHashB64,
       @RequestPart(value = "i", required = false) MultipartFile flCheatScreenshot)
       throws Exception {
-    System.out.println("/osu-submit-modular-selector.php called");
     byte[] iv = Base64.getDecoder().decode(ivB64);
 
     // The bancho protocol uses the "score" parameter name for both the base64'ed score data,
@@ -89,16 +86,21 @@ public class ScoringController {
     String[] scoreData = decrypted.split(":");
 
     if (scoreData.length < 13) {
-      // Malformed decrypted score data
+      logger.info("A submitted score has a malformed score data.");
+      return "error: " + ScoreSubmissionErrors.NO.getValue();
     }
 
     String username = scoreData[1].stripTrailing();
 
     User user = userService.login(username, passwordMd5);
-    if (user == null) {}
+    if (user == null) {
+      return "error: " + ScoreSubmissionErrors.NEEDS_AUTHENTICATION.getValue();
+    }
 
     Session session = sessionService.getPrimarySessionByUsername(username);
-    if (session == null) {}
+    if (session == null) {
+      return "error: " + ScoreSubmissionErrors.NEEDS_AUTHENTICATION.getValue();
+    }
 
     // TODO: handle differently depending on beatmap ranked status
 
@@ -123,7 +125,10 @@ public class ScoringController {
     // filter them here
     Beatmap osuApibeatmap = osuApi.getBeatmap(beatmapMd5);
 
-    if (osuApibeatmap == null) {}
+    if (osuApibeatmap == null) {
+      return "error: "
+          + ScoreSubmissionErrors.BEATMAP_UNRANKED.getValue(); // TODO: is this the correct error?
+    }
 
     // Check if the beatmapset exists in our database, if not, store the beatmapset and the beatmap
     Beatmapset beatmapset = beatmapsetService.findByBeatmapsetId(osuApibeatmap.getBeatmapsetId());
@@ -134,12 +139,8 @@ public class ScoringController {
       beatmapset.setArtist(osuApibeatmap.getArtist());
       beatmapset.setSource(osuApibeatmap.getSource());
       beatmapset.setCreator(osuApibeatmap.getCreator());
-      beatmapset.setDescription(
-          null); // TODO: osu!api v1 does not provide description, save it when we change to v2
       beatmapset.setTags(osuApibeatmap.getTags());
-      // 4 = loved, 3 = qualified, 2 = approved, 1 = ranked, 0 = pending,
-      // -1 = WIP, -2 = graveyard
-      beatmapset.setSubmissionStatus(osuApibeatmap.getApproved());
+      beatmapset.setSubmissionStatus(BeatmapRankedStatus.fromValue(osuApibeatmap.getApproved()));
       beatmapset.setHasVideo(osuApibeatmap.getVideo());
       beatmapset.setHasStoryboard(osuApibeatmap.getStoryboard());
       beatmapset.setSubmissionDate(osuApibeatmap.getSubmitDate());
@@ -147,15 +148,7 @@ public class ScoringController {
           osuApibeatmap.getApprovedDate() != null ? osuApibeatmap.getApprovedDate() : null);
       beatmapset.setLastUpdated(osuApibeatmap.getLastUpdate());
       beatmapset.setTotalPlaycount(0); // dont save bancho playcount, we will track our own
-      // 0 = any, 1 = unspecified, 2 = english, 3 = japanese, 4 =
-      // chinese, 5 = instrumental, 6 = korean, 7 = french, 8 = german, 9
-      // = swedish, 10 = spanish, 11 = italian, 12 = russian, 13 =
-      // polish, 14 = other
       beatmapset.setLanguageId(osuApibeatmap.getLanguageId());
-      // 0 = any, 1 = unspecified, 2 = video game, 3 = anime, 4 = rock, 5 =
-      // pop, 6 = other, 7 = novelty, 9 = hip hop, 10 = electronic, 11 =
-      // metal, 12 = classical, 13 = folk, 14 = jazz (note that there's no
-      // 8)
       beatmapset.setGenreId(osuApibeatmap.getGenreId());
       beatmapsetService.create(beatmapset);
 
@@ -192,6 +185,7 @@ public class ScoringController {
     }
 
     Score score = new Score();
+    score.setUser(user);
     score.setOnlineChecksum(onlineChecksum);
     score.setBeatmap(beatmapService.findByMd5(beatmapMd5));
     score.setScore(scorePoints);
@@ -205,10 +199,6 @@ public class ScoringController {
     score.setNumGekis(numGekis);
     score.setNumKatus(numKatus);
     score.setGrade(grade);
-    score.setSubmissionStatus(
-        isPassed
-            ? SubmissionStatus.SUBMITTED
-            : SubmissionStatus.FAILED); // TODO: determine best status
     score.setMode(Mode.fromValue(mode));
     score.setTimeElapsed(isPassed ? scoreTime : failTime);
 
@@ -222,17 +212,7 @@ public class ScoringController {
     Score previousBestScore = null;
 
     if (isPassed) {
-      // List<Score> previousBests = scoreService.getMany(beatmap, user, SubmissionStatus.BEST);
-      // previousBestScore = previousBests.isEmpty() ? null : previousBests.getFirst();
-
-      // TODO: Fix this, previou best score returns null always for some reason
-      // maybe the methods is wrong, to fix
       previousBestScore = scoreService.getBestScore(beatmap, user);
-      System.out.println("Previous best score: " + previousBestScore);
-      System.out.println(
-          "Previous score pp:"
-              + (previousBestScore != null ? previousBestScore.getPerformancePoints() : "null"));
-      System.out.println("New score pp: " + pp);
       boolean isNewBest =
           previousBestScore == null || pp > previousBestScore.getPerformancePoints();
 
@@ -268,21 +248,9 @@ public class ScoringController {
     beatmapService.update(beatmap);
 
     Stat modeStats = statService.getStats(user, score.getMode());
-    List<Score> top100Scores =
-        scoreService.getMany(
-            user,
-            score.getMode(),
-            "performancePoints",
-            List.of(SubmissionStatus.BEST),
-            List.of(BeatmapRankedStatus.RANKED, BeatmapRankedStatus.APPROVED),
-            1,
-            100);
-    int totalScoreCount =
-        scoreService.getTotalCount(
-            user,
-            score.getMode(),
-            List.of(SubmissionStatus.BEST),
-            List.of(BeatmapRankedStatus.RANKED, BeatmapRankedStatus.APPROVED));
+    System.out.println("Mode stats finded: " + modeStats);
+    List<Score> top100Scores = scoreService.getUserTop100(user, score.getMode());
+    int totalScoreCount = scoreService.getUserBestScoresCount(user, score.getMode());
 
     // Calculate new overall accuracy
     float weightedAccuracy = calculateWeightedAccuracy(top100Scores);
@@ -290,7 +258,7 @@ public class ScoringController {
     if (totalScoreCount > 0) {
       bonusAccuracy = (float) (100.0f / (20 * (1 - Math.pow(0.95f, totalScoreCount))));
     }
-    float totalAccuracy = Math.round((weightedAccuracy * bonusAccuracy) / 100.0);
+    float totalAccuracy = (weightedAccuracy * bonusAccuracy) / 100.0f;
 
     // Calculate new overall pp
     float weightedPp = calculateWeightedPp(top100Scores);
@@ -300,7 +268,10 @@ public class ScoringController {
     // Create a copy of the previous gamemode's stats.
     // We will use this to construct overall ranking charts for the client
     Stat previousModeStats = (Stat) modeStats.clone();
-    int newRankedScore = modeStats.getRankedScore();
+    int previousGlobalRank =
+        Math.toIntExact(rankingService.getGlobalRank(Mode.fromValue(mode), user));
+    long newRankedScore = modeStats.getRankedScore();
+
     if (score.getSubmissionStatus() == SubmissionStatus.BEST
         && (beatmap.getStatus() == BeatmapRankedStatus.RANKED
             || beatmap.getStatus() == BeatmapRankedStatus.APPROVED)) {
@@ -333,7 +304,9 @@ public class ScoringController {
     modeStats.setACount(modeStats.getACount() + (score.getGrade().equals("A") ? 1 : 0));
     statService.update(modeStats);
 
-    // TODO: send account stats to all other osu! sessions if we're not restricted
+    rankingService.updateRanking(Mode.fromValue(mode), user, modeStats);
+
+    // Send account stats to all other osu! sessions if we're not restricted
     List<Session> osuSessionsToNotify;
     if (user.isRestricted()) {
       osuSessionsToNotify = List.of(session);
@@ -341,7 +314,8 @@ public class ScoringController {
       osuSessionsToNotify = sessionService.getAllSessions();
     }
 
-    // TODO: Get own global ranking
+    int ownGlobalRank = Math.toIntExact(rankingService.getGlobalRank(Mode.fromValue(mode), user));
+
     for (Session otherOsuSession : osuSessionsToNotify) {
       ByteArrayOutputStream stream = new ByteArrayOutputStream();
       packetWriter.writePacket(
@@ -358,7 +332,7 @@ public class ScoringController {
               modeStats.getAccuracy(),
               modeStats.getPlayCount(),
               modeStats.getTotalScore(),
-              727, // TODO: global rank
+              ownGlobalRank,
               modeStats.getPerformancePoints()));
       packetBundleService.enqueue(otherOsuSession.getId(), new PacketBundle(stream.toByteArray()));
     }
@@ -366,20 +340,14 @@ public class ScoringController {
     // TODO: calculate score rank on the beatmap
     int scoreRank = 1;
 
-    // TODO: if this score is #1, send it to the #announce channel
+    // If this score is #1, send it to the #announce channel
     if (score.getSubmissionStatus() == SubmissionStatus.BEST && scoreRank == 1) {
       Channel announceChannel = channelService.findByName("#announce");
       if (announceChannel != null) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        String message =
-            String.format(
-                "%s just got the top score on %s [%s] +%s with %spp!",
-                user.getUsername(),
-                beatmapset.getArtist(),
-                beatmap.getVersion(),
-                Mods.fromBits(mods),
-                Math.round(score.getPerformancePoints()));
-        packetWriter.writePacket(stream, new MessagePacket("BanchoBot", message, "#announce", 0));
+        packetWriter.writePacket(
+            stream,
+            new MessagePacket("BanchoBot", beatmap.createBeatmapChatEmbed(), "#announce", 0));
         Set<UUID> announceChannelMembers =
             channelMembersRedisService.getMembers(announceChannel.getId());
         for (UUID osuSessionId : announceChannelMembers) {
@@ -415,8 +383,8 @@ public class ScoringController {
     String beatmapPerformancePointsAfter = String.valueOf(Math.round(score.getPerformancePoints()));
 
     // Build overall ranking chart values
-    String overallRankBefore = "727"; // TODO: get previous overall rank
-    String overallRankAfter = "727"; // TODO: get new overall rank
+    String overallRankBefore = String.valueOf(previousGlobalRank);
+    String overallRankAfter = String.valueOf(ownGlobalRank);
     String overallRankedScoreBefore = String.valueOf(previousModeStats.getRankedScore());
     String overallRankedScoreAfter = String.valueOf(modeStats.getRankedScore());
     String overallTotalScoreBefore = String.valueOf(previousModeStats.getTotalScore());
@@ -472,6 +440,13 @@ public class ScoringController {
     response.append("ppAfter:").append(overallPerformancePointsAfter).append("|");
 
     // TODO: add newly unlocked achievements to response data
+
+    logger.info(
+        "[{}] {} submitted a score | ({}), {}pp",
+        score.getMode().getAlias(),
+        score.getUser().getUsername(),
+        score.getSubmissionStatus(),
+        String.format("%.2f", score.getPerformancePoints()));
 
     return response.toString();
   }

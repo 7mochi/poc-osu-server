@@ -102,7 +102,7 @@ public class PacketWriter {
     writer.writeUint8(buffer, packet.getGamemode().getValue());
     writer.writeInt32(buffer, packet.getBeatmapId());
     writer.writeUint64(buffer, packet.getRankedScore());
-    writer.writeFloat32(buffer, packet.getAccuracy());
+    writer.writeFloat32(buffer, packet.getAccuracy() / 100.0f);
     writer.writeUint32(buffer, packet.getPlayCount());
     writer.writeUint64(buffer, packet.getTotalScore());
     writer.writeUint32(buffer, packet.getGlobalRank());

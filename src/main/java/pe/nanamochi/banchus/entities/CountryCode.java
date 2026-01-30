@@ -3,7 +3,11 @@ package pe.nanamochi.banchus.entities;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
+@Getter
+@AllArgsConstructor
 public enum CountryCode {
   OC("oc", 1),
   EU("eu", 2),
@@ -260,19 +264,6 @@ public enum CountryCode {
 
   private final String code;
   private final int id;
-
-  CountryCode(String code, int id) {
-    this.code = code;
-    this.id = id;
-  }
-
-  public String code() {
-    return code;
-  }
-
-  public int id() {
-    return id;
-  }
 
   private static final Map<String, CountryCode> BY_CODE =
       Arrays.stream(values()).collect(Collectors.toMap(c -> c.code, c -> c));

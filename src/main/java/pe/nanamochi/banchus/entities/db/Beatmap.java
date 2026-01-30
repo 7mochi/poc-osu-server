@@ -3,11 +3,13 @@ package pe.nanamochi.banchus.entities.db;
 import jakarta.persistence.*;
 import java.time.Instant;
 import lombok.Data;
+import lombok.ToString;
 import pe.nanamochi.banchus.entities.BeatmapRankedStatus;
 import pe.nanamochi.banchus.entities.Mode;
 
 @Entity
 @Data
+@ToString(exclude = "beatmapset")
 @Table(name = "beatmaps")
 public class Beatmap {
   @Id private int id;
@@ -36,4 +38,16 @@ public class Beatmap {
   @ManyToOne
   @JoinColumn(name = "beatmapset_id")
   private Beatmapset beatmapset;
+
+  public String createBeatmapChatEmbed() {
+    return String.format(
+        "[https://osu.ppy.sh/beatmapsets/%d#%s/%d %s - %s (%s) [%s]]",
+        beatmapset.getId(),
+        mode.getAlias(),
+        id,
+        beatmapset.getArtistUnicode(),
+        beatmapset.getTitleUnicode(),
+        beatmapset.getCreator(),
+        version);
+  }
 }

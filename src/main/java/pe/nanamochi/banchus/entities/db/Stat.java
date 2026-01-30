@@ -17,8 +17,8 @@ public class Stat implements Cloneable {
 
   @ManyToOne private User user;
   private Mode gamemode;
-  private int totalScore;
-  private int rankedScore;
+  private long totalScore;
+  private long rankedScore;
   private int performancePoints;
   private int playCount;
   private int playTime;

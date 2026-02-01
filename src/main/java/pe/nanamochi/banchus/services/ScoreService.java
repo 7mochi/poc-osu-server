@@ -16,6 +16,10 @@ import pe.nanamochi.banchus.repositories.ScoreRepository;
 public class ScoreService {
   @Autowired private ScoreRepository scoreRepository;
 
+  public Score getScoreById(Integer id) {
+    return scoreRepository.findById(id).orElse(null);
+  }
+
   public Score saveScore(Score score) {
     return scoreRepository.save(score);
   }

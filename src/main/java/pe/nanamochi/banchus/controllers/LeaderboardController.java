@@ -49,7 +49,6 @@ public class LeaderboardController {
     Mode mode = Mode.fromValue(gamemode);
     List<Mods> mods = Mods.filterInvalidModCombinations(Mods.fromBitmask(modsBitmask), mode);
 
-    // TODO: Fix the responses in the case of and error
     User user = userService.login(username, passwordMd5);
     if (user == null) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

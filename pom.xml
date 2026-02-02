@@ -14,7 +14,15 @@
 		<java.version>21</java.version>
 		<spotless-maven-plugin.version>2.46.1</spotless-maven-plugin.version>
 		<git-build-hook.version>3.6.0</git-build-hook.version>
+		<spring-boot.version>4.1.0-M1</spring-boot.version>
+		<mariadb.version>3.5.7</mariadb.version>
+		<lombok.version>1.18.42</lombok.version>
+		<commons-compress.version>1.28.0</commons-compress.version>
+		<bcprov.version>1.83</bcprov.version>
+		<rosu-pp-jar.version>0.2.0</rosu-pp-jar.version>
 		<org.mapstruct.version>1.6.3</org.mapstruct.version>
+		<maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+		<git-commit-id-maven-plugin.version>9.0.2</git-commit-id-maven-plugin.version>
 	</properties>
 
 	<groupId>pe.nanamochi</groupId>
@@ -43,6 +51,7 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
+			<version>${spring-boot.version}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.springframework.boot</groupId>
@@ -53,50 +62,56 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
+			<version>${spring-boot.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
+			<version>${spring-boot.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mariadb.jdbc</groupId>
 			<artifactId>mariadb-java-client</artifactId>
+			<version>${mariadb.version}</version>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
+			<version>${spring-boot.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<version>${spring-boot.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-log4j2</artifactId>
-			<version>4.0.1</version>
+			<version>${spring-boot.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
-			<version>1.27.1</version>
+			<version>${commons-compress.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcprov-jdk18on</artifactId>
-			<version>1.83</version>
+			<version>${bcprov.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.github.7mochi</groupId>
 			<artifactId>rosu-pp-jar</artifactId>
-			<version>0.2.0</version>
+			<version>${rosu-pp-jar.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mapstruct</groupId>
@@ -114,11 +129,13 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin.version}</version>
 				<configuration>
 					<annotationProcessorPaths>
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version>
 						</path>
 						<path>
 							<groupId>org.mapstruct</groupId>
@@ -131,6 +148,7 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<version>${spring-boot.version}</version>
 				<configuration>
 					<excludes>
 						<exclude>
@@ -205,7 +223,7 @@
 			<plugin>
 				<groupId>io.github.git-commit-id</groupId>
 				<artifactId>git-commit-id-maven-plugin</artifactId>
-				<version>9.0.2</version>
+				<version>${git-commit-id-maven-plugin.version}</version>
 				<executions>
 					<execution>
 						<id>get-the-git-infos</id>

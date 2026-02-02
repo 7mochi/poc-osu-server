@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/")
 public class MenuController {
-
   @Value("${banchus.menu-icon.image-url}")
   private String menuIconImage;
 

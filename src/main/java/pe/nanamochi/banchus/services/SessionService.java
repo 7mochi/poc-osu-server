@@ -2,14 +2,15 @@ package pe.nanamochi.banchus.services;
 
 import java.util.List;
 import java.util.UUID;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.entities.db.Session;
 import pe.nanamochi.banchus.repositories.SessionRepository;
 
 @Service
+@RequiredArgsConstructor
 public class SessionService {
-  @Autowired private SessionRepository sessionRepository;
+  private final SessionRepository sessionRepository;
 
   public Session getSessionByID(UUID id) {
     return sessionRepository.findById(id).orElse(null);

@@ -2,7 +2,7 @@ package pe.nanamochi.banchus.services;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.entities.Mode;
 import pe.nanamochi.banchus.entities.db.Score;
@@ -11,9 +11,9 @@ import pe.nanamochi.banchus.entities.db.User;
 import pe.nanamochi.banchus.repositories.StatRepository;
 
 @Service
+@RequiredArgsConstructor
 public class StatService {
-
-  @Autowired private StatRepository statRepository;
+  private final StatRepository statRepository;
 
   private static final float DECAY = 0.95f;
 

@@ -1,15 +1,15 @@
 package pe.nanamochi.banchus.services;
 
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.entities.db.Channel;
 import pe.nanamochi.banchus.repositories.ChannelRepository;
 
 @Service
+@RequiredArgsConstructor
 public class ChannelService {
-
-  @Autowired private ChannelRepository channelRepository;
+  private final ChannelRepository channelRepository;
 
   public List<Channel> getAllChannels() {
     return channelRepository.findAll();

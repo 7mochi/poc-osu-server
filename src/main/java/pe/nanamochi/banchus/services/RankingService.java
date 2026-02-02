@@ -1,6 +1,6 @@
 package pe.nanamochi.banchus.services;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.entities.CountryCode;
 import pe.nanamochi.banchus.entities.Mode;
@@ -9,8 +9,9 @@ import pe.nanamochi.banchus.entities.db.User;
 import pe.nanamochi.banchus.repositories.RankingRepository;
 
 @Service
+@RequiredArgsConstructor
 public class RankingService {
-  @Autowired private RankingRepository rankingRepository;
+  private final RankingRepository rankingRepository;
 
   public long getGlobalRank(Mode mode, User user) {
     return rankingRepository.getGlobalRank(mode, user);

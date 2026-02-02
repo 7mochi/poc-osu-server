@@ -10,9 +10,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -35,19 +35,20 @@ import pe.nanamochi.banchus.utils.PrivilegesUtil;
 
 @RestController
 @RequestMapping("/")
+@RequiredArgsConstructor
 public class LoginController {
   private static final Logger logger = LoggerFactory.getLogger(LoginController.class);
 
-  @Autowired private PacketWriter packetWriter;
-  @Autowired private PacketReader packetReader;
-  @Autowired private PacketHandler packetHandler;
-  @Autowired private UserService userService;
-  @Autowired private SessionService sessionService;
-  @Autowired private StatService statService;
-  @Autowired private ChannelService channelService;
-  @Autowired private ChannelMembersRedisService channelMembersRedisService;
-  @Autowired private PacketBundleService packetBundleService;
-  @Autowired private RankingService rankingService;
+  private final PacketWriter packetWriter;
+  private final PacketReader packetReader;
+  private final PacketHandler packetHandler;
+  private final UserService userService;
+  private final SessionService sessionService;
+  private final StatService statService;
+  private final ChannelService channelService;
+  private final ChannelMembersRedisService channelMembersRedisService;
+  private final PacketBundleService packetBundleService;
+  private final RankingService rankingService;
 
   @PostMapping(value = "/", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<Resource> banchoHandler(

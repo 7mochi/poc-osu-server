@@ -1,7 +1,7 @@
 package pe.nanamochi.banchus.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,12 +17,12 @@ import pe.nanamochi.banchus.services.UserService;
 
 @RestController
 @RequestMapping("/web")
+@RequiredArgsConstructor
 public class ScoringController {
-
-  @Autowired private UserService userService;
-  @Autowired private SessionService sessionService;
-  @Autowired private ScoreService scoreService;
-  @Autowired private BeatmapService beatmapService;
+  private final UserService userService;
+  private final SessionService sessionService;
+  private final ScoreService scoreService;
+  private final BeatmapService beatmapService;
 
   @PostMapping(
       value = "/osu-submit-modular-selector.php",

@@ -1,13 +1,13 @@
 package pe.nanamochi.banchus.services;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.entities.db.Beatmapset;
 import pe.nanamochi.banchus.mappers.BeatmapsetMapper;
 import pe.nanamochi.banchus.repositories.BeatmapsetRepository;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class BeatmapsetService {
   private final BeatmapsetRepository beatmapsetRepository;
   private final BeatmapsetMapper beatmapsetMapper;

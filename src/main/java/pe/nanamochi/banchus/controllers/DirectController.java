@@ -1,8 +1,6 @@
 package pe.nanamochi.banchus.controllers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,10 +14,9 @@ import pe.nanamochi.banchus.utils.OsuDirectApi;
 
 @RestController
 @RequestMapping("/web")
+@RequiredArgsConstructor
 public class DirectController {
-  private static final Logger logger = LoggerFactory.getLogger(DirectController.class);
-
-  @Autowired private UserService userService;
+  private final UserService userService;
 
   @GetMapping(value = "/osu-search.php", produces = MediaType.TEXT_PLAIN_VALUE)
   public ResponseEntity<String> osuSearchHandler(

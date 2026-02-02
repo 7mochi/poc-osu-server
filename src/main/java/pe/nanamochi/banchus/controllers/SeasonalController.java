@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/web")
 public class SeasonalController {
-
   @Value("${banchus.seasonal-backgrounds.urls}")
   private List<String> seasonalBackgroundsUrls;
 

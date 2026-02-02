@@ -1,6 +1,6 @@
 package pe.nanamochi.banchus.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +15,12 @@ import pe.nanamochi.banchus.services.*;
 
 @RestController
 @RequestMapping("/web")
+@RequiredArgsConstructor
 public class ReplayController {
-  @Autowired private UserService userService;
-  @Autowired private SessionService sessionService;
-  @Autowired private ScoreService scoreService;
-  @Autowired private ReplayService replayService;
+  private final UserService userService;
+  private final SessionService sessionService;
+  private final ScoreService scoreService;
+  private final ReplayService replayService;
 
   @GetMapping(value = "/osu-getreplay.php", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<byte[]> getReplay(

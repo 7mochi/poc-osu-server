@@ -2,18 +2,16 @@ package pe.nanamochi.banchus.services;
 
 import java.util.Set;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.entities.db.Channel;
 import pe.nanamochi.banchus.entities.db.Session;
 import pe.nanamochi.banchus.repositories.ChannelMembersRedisRepository;
 
 @Service
+@RequiredArgsConstructor
 public class ChannelMembersRedisService {
   private final ChannelMembersRedisRepository channelMembersRedisRepository;
-
-  public ChannelMembersRedisService(ChannelMembersRedisRepository channelMembersRedisRepository) {
-    this.channelMembersRedisRepository = channelMembersRedisRepository;
-  }
 
   public void addMemberToChannel(Channel channel, Session session) {
     channelMembersRedisRepository.add(channel.getId(), session.getId());

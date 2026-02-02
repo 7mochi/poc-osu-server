@@ -1,8 +1,6 @@
 package pe.nanamochi.banchus.controllers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.nanamochi.banchus.entities.db.User;
@@ -11,10 +9,9 @@ import pe.nanamochi.banchus.utils.OsuDirectApi;
 
 @RestController
 @RequestMapping("/d")
+@RequiredArgsConstructor
 public class BeatmapSetController {
-  private static final Logger logger = LoggerFactory.getLogger(BeatmapSetController.class);
-
-  @Autowired private UserService userService;
+  private final UserService userService;
 
   @GetMapping("/{beatmapSetId}")
   public ResponseEntity<String> downloadBeatmapSet(

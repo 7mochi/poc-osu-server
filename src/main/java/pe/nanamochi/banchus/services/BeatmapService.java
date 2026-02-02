@@ -4,7 +4,7 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.entities.StorageType;
 import pe.nanamochi.banchus.entities.db.Beatmap;
@@ -14,9 +14,8 @@ import pe.nanamochi.banchus.repositories.BeatmapRepository;
 import pe.nanamochi.banchus.utils.OsuApi;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class BeatmapService {
-
   private final BeatmapRepository beatmapRepository;
   private final BeatmapMapper beatmapMapper;
   private final FileStorageService storage;

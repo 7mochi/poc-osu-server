@@ -1,11 +1,11 @@
 package pe.nanamochi.banchus.services;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.entities.StorageType;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ReplayService {
   private final FileStorageService storage;
 

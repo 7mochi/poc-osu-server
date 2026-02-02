@@ -1,14 +1,14 @@
 package pe.nanamochi.banchus.services;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.entities.db.User;
 import pe.nanamochi.banchus.repositories.UserRepository;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
-
-  @Autowired private UserRepository userRepository;
+  private final UserRepository userRepository;
 
   public User login(String username, String passwordMd5) {
     return userRepository.findByUsernameAndPasswordMd5(username, passwordMd5);

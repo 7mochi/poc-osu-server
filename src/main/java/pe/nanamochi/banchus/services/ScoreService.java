@@ -14,7 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.entities.*;
 import pe.nanamochi.banchus.entities.db.*;
@@ -25,18 +25,19 @@ import pe.nanamochi.banchus.repositories.ScoreRepository;
 import pe.nanamochi.banchus.utils.Rijndael;
 
 @Service
+@RequiredArgsConstructor
 public class ScoreService {
-  @Autowired private ScoreRepository scoreRepository;
-  @Autowired private SessionService sessionService;
-  @Autowired private ChartService chartService;
-  @Autowired private RankingService rankingService;
-  @Autowired private PacketWriter packetWriter;
-  @Autowired private PacketBundleService packetBundleService;
-  @Autowired private ChannelService channelService;
-  @Autowired private ChannelMembersRedisService channelMembersRedisService;
-  @Autowired private ReplayService replayService;
-  @Autowired private StatService statService;
-  @Autowired private BeatmapService beatmapService;
+  private final ScoreRepository scoreRepository;
+  private final SessionService sessionService;
+  private final ChartService chartService;
+  private final RankingService rankingService;
+  private final PacketWriter packetWriter;
+  private final PacketBundleService packetBundleService;
+  private final ChannelService channelService;
+  private final ChannelMembersRedisService channelMembersRedisService;
+  private final ReplayService replayService;
+  private final StatService statService;
+  private final BeatmapService beatmapService;
 
   public Score getScoreById(Integer id) {
     return scoreRepository.findById(id).orElse(null);

@@ -2,9 +2,7 @@ package pe.nanamochi.banchus.controllers;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -17,11 +15,10 @@ import pe.nanamochi.banchus.utils.Validation;
 
 @RestController
 @RequestMapping("/")
+@RequiredArgsConstructor
 public class RegistrationController {
-  private static final Logger logger = LoggerFactory.getLogger(RegistrationController.class);
-
-  @Autowired private UserService userService;
-  @Autowired private StatService statService;
+  private final UserService userService;
+  private final StatService statService;
 
   @PostMapping(value = "/users")
   public ResponseEntity<String> registerAccount(

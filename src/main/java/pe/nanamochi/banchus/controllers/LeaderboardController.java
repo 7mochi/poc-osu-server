@@ -1,9 +1,9 @@
 package pe.nanamochi.banchus.controllers;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,13 +16,14 @@ import pe.nanamochi.banchus.services.*;
 
 @RestController
 @RequestMapping("/web")
+@RequiredArgsConstructor
 public class LeaderboardController {
   private static final Logger logger = LoggerFactory.getLogger(LeaderboardController.class);
 
-  @Autowired private UserService userService;
-  @Autowired private SessionService sessionService;
-  @Autowired private BeatmapService beatmapService;
-  @Autowired private ScoreService scoreService;
+  private final UserService userService;
+  private final SessionService sessionService;
+  private final BeatmapService beatmapService;
+  private final ScoreService scoreService;
 
   @GetMapping("/osu-osz2-getscores.php")
   public ResponseEntity<String> getScores(

@@ -34,7 +34,7 @@ public class ScoreService {
   private final PacketWriter packetWriter;
   private final PacketBundleService packetBundleService;
   private final ChannelService channelService;
-  private final ChannelMembersRedisService channelMembersRedisService;
+  private final ChannelMembersService channelMembersService;
   private final ReplayService replayService;
   private final StatService statService;
   private final BeatmapService beatmapService;
@@ -446,7 +446,7 @@ public class ScoreService {
             stream,
             new MessagePacket("BanchoBot", beatmap.createBeatmapChatEmbed(), "#announce", 0));
         Set<UUID> announceChannelMembers =
-            channelMembersRedisService.getMembers(announceChannel.getId());
+            channelMembersService.getMembers(announceChannel.getId());
         for (UUID osuSessionId : announceChannelMembers) {
           packetBundleService.enqueue(osuSessionId, new PacketBundle(stream.toByteArray()));
         }

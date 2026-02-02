@@ -6,22 +6,22 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.entities.db.Channel;
 import pe.nanamochi.banchus.entities.db.Session;
-import pe.nanamochi.banchus.repositories.ChannelMembersRedisRepository;
+import pe.nanamochi.banchus.repositories.ChannelMembersRepository;
 
 @Service
 @RequiredArgsConstructor
-public class ChannelMembersRedisService {
-  private final ChannelMembersRedisRepository channelMembersRedisRepository;
+public class ChannelMembersService {
+  private final ChannelMembersRepository channelMembersRepository;
 
   public void addMemberToChannel(Channel channel, Session session) {
-    channelMembersRedisRepository.add(channel.getId(), session.getId());
+    channelMembersRepository.add(channel.getId(), session.getId());
   }
 
   public Set<UUID> getMembers(UUID channelId) {
-    return channelMembersRedisRepository.getMembers(channelId);
+    return channelMembersRepository.getMembers(channelId);
   }
 
   public UUID removeMemberFromChannel(Channel channel, Session session) {
-    return channelMembersRedisRepository.remove(channel.getId(), session.getId());
+    return channelMembersRepository.remove(channel.getId(), session.getId());
   }
 }

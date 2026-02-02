@@ -16,7 +16,7 @@ import pe.nanamochi.banchus.packets.PacketWriter;
 import pe.nanamochi.banchus.packets.Packets;
 import pe.nanamochi.banchus.packets.client.ChannelLeavePacket;
 import pe.nanamochi.banchus.packets.server.ChannelAvailablePacket;
-import pe.nanamochi.banchus.services.ChannelMembersRedisService;
+import pe.nanamochi.banchus.services.ChannelMembersService;
 import pe.nanamochi.banchus.services.ChannelService;
 import pe.nanamochi.banchus.services.PacketBundleService;
 import pe.nanamochi.banchus.services.SessionService;
@@ -29,7 +29,7 @@ public class ChannelLeaveHandler extends AbstractPacketHandler<ChannelLeavePacke
   @Autowired private PacketBundleService packetBundleService;
   @Autowired private SessionService sessionService;
   @Autowired private ChannelService channelService;
-  @Autowired private ChannelMembersRedisService channelMembersService;
+  @Autowired private ChannelMembersService channelMembersService;
 
   @Override
   public Packets getPacketType() {

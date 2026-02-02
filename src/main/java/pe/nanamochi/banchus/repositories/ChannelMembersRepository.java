@@ -7,10 +7,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class ChannelMembersRedisRepository {
+public class ChannelMembersRepository {
   private final RedisTemplate<String, String> redisTemplate;
 
-  public ChannelMembersRedisRepository(RedisTemplate<String, String> redisTemplate) {
+  public ChannelMembersRepository(RedisTemplate<String, String> redisTemplate) {
     this.redisTemplate = redisTemplate;
   }
 

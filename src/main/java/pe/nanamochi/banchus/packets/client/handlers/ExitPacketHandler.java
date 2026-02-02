@@ -20,7 +20,7 @@ import pe.nanamochi.banchus.packets.Packets;
 import pe.nanamochi.banchus.packets.client.ExitPacket;
 import pe.nanamochi.banchus.packets.server.ChannelAvailablePacket;
 import pe.nanamochi.banchus.packets.server.UserQuitPacket;
-import pe.nanamochi.banchus.services.ChannelMembersRedisService;
+import pe.nanamochi.banchus.services.ChannelMembersService;
 import pe.nanamochi.banchus.services.ChannelService;
 import pe.nanamochi.banchus.services.PacketBundleService;
 import pe.nanamochi.banchus.services.SessionService;
@@ -34,7 +34,7 @@ public class ExitPacketHandler extends AbstractPacketHandler<ExitPacket> {
   @Autowired private PacketBundleService packetBundleService;
   @Autowired private SessionService sessionService;
   @Autowired private ChannelService channelService;
-  @Autowired private ChannelMembersRedisService channelMembersService;
+  @Autowired private ChannelMembersService channelMembersService;
 
   @Override
   public Packets getPacketType() {

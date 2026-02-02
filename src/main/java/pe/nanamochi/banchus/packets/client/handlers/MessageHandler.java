@@ -16,7 +16,7 @@ import pe.nanamochi.banchus.packets.AbstractPacketHandler;
 import pe.nanamochi.banchus.packets.PacketWriter;
 import pe.nanamochi.banchus.packets.Packets;
 import pe.nanamochi.banchus.packets.client.MessagePacket;
-import pe.nanamochi.banchus.services.ChannelMembersRedisService;
+import pe.nanamochi.banchus.services.ChannelMembersService;
 import pe.nanamochi.banchus.services.ChannelService;
 import pe.nanamochi.banchus.services.PacketBundleService;
 
@@ -27,7 +27,7 @@ public class MessageHandler extends AbstractPacketHandler<MessagePacket> {
   @Autowired private PacketWriter packetWriter;
   @Autowired private PacketBundleService packetBundleService;
   @Autowired private ChannelService channelService;
-  @Autowired private ChannelMembersRedisService channelMembersService;
+  @Autowired private ChannelMembersService channelMembersService;
 
   @Override
   public Packets getPacketType() {

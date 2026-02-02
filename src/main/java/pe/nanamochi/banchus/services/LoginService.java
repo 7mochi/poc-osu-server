@@ -32,7 +32,7 @@ public class LoginService {
   private final SessionService sessionService;
   private final StatService statService;
   private final ChannelService channelService;
-  private final ChannelMembersRedisService channelMembersRedisService;
+  private final ChannelMembersService channelMembersService;
   private final PacketBundleService packetBundleService;
   private final RankingService rankingService;
   private final IPApiService ipApiService;
@@ -143,7 +143,7 @@ public class LoginService {
           || channel.getName().equals("#lobby")) {
         continue;
       }
-      Set<UUID> currentChannelMembers = channelMembersRedisService.getMembers(channel.getId());
+      Set<UUID> currentChannelMembers = channelMembersService.getMembers(channel.getId());
       packetWriter.writePacket(
           stream,
           new ChannelAvailablePacket(

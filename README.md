@@ -15,6 +15,8 @@ A very WIP osu! server.
 - Menu icon support (The image you see on the bottom of the osu! client)\
 - Seasonal backgrounds
 - osu!direct
+- Score submission (only for standard mode for now)
+- Beatmap leaderboard (National, global and per-mods, friends leaderboards coming soon)
 
 ## TODO
 Check our roadmap here: [Roadmap](https://github.com/users/7mochi/projects/2/views/1)

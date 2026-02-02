@@ -1,34 +1,31 @@
-package pe.nanamochi.banchus.utils;
+package pe.nanamochi.banchus.services;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import pe.nanamochi.banchus.entities.osuapi.Beatmap;
 
-@Component
-public class OsuApi {
+@Service
+@RequiredArgsConstructor
+public class OsuApiService {
   private static final String BASE_URL = "https://osu.ppy.sh";
-  private final RestTemplate restTemplate;
-  private final String apiKey;
 
-  public OsuApi(@Value("${banchus.osu-api.v1.key}") String apiKey) {
-    this.apiKey = apiKey;
-    this.restTemplate = new RestTemplate();
-  }
+  private final RestTemplate restTemplate;
+
+  @Value("${banchus.osu-api.v1.key}")
+  private String apiKey;
 
   public byte[] getOsuFile(int beatmapId) {
-    try {
-      ResponseEntity<byte[]> response =
-          new RestTemplate().getForEntity(BASE_URL + "/osu/" + beatmapId, byte[].class);
-      return response.getStatusCode().is2xxSuccessful() ? response.getBody() : null;
-    } catch (Exception e) {
-      return null;
-    }
+    ResponseEntity<byte[]> response =
+        restTemplate.getForEntity(BASE_URL + "/osu/" + beatmapId, byte[].class);
+
+    return response.getStatusCode().is2xxSuccessful() ? response.getBody() : null;
   }
 
   public Beatmap getBeatmap(String beatmapMd5) {

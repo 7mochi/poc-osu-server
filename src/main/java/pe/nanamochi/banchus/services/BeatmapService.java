@@ -11,7 +11,6 @@ import pe.nanamochi.banchus.entities.db.Beatmap;
 import pe.nanamochi.banchus.entities.db.Beatmapset;
 import pe.nanamochi.banchus.mappers.BeatmapMapper;
 import pe.nanamochi.banchus.repositories.BeatmapRepository;
-import pe.nanamochi.banchus.utils.OsuApi;
 
 @Service
 @RequiredArgsConstructor
@@ -19,7 +18,7 @@ public class BeatmapService {
   private final BeatmapRepository beatmapRepository;
   private final BeatmapMapper beatmapMapper;
   private final FileStorageService storage;
-  private final OsuApi osuApi;
+  private final OsuApiService osuApiService;
   private final BeatmapsetService beatmapsetService;
 
   public Beatmap create(Beatmap beatmap) {
@@ -58,7 +57,7 @@ public class BeatmapService {
       }
     }
 
-    byte[] downloaded = osuApi.getOsuFile(beatmapId);
+    byte[] downloaded = osuApiService.getOsuFile(beatmapId);
     if (downloaded == null) {
       return null;
     }
@@ -71,7 +70,7 @@ public class BeatmapService {
     Beatmap beatmap = findByMd5(beatmapMd5);
 
     if (beatmap == null) {
-      var osuApiBeatmap = osuApi.getBeatmap(beatmapMd5);
+      var osuApiBeatmap = osuApiService.getBeatmap(beatmapMd5);
       if (osuApiBeatmap == null) return null;
 
       Beatmapset beatmapset = beatmapsetService.findByBeatmapsetId(osuApiBeatmap.getBeatmapsetId());
@@ -81,7 +80,7 @@ public class BeatmapService {
       }
 
       List<pe.nanamochi.banchus.entities.osuapi.Beatmap> osuApiBeatmaps =
-          osuApi.getBeatmaps(osuApiBeatmap.getBeatmapsetId());
+          osuApiService.getBeatmaps(osuApiBeatmap.getBeatmapsetId());
       if (osuApiBeatmaps == null || osuApiBeatmaps.isEmpty()) return null;
 
       for (var b : osuApiBeatmaps) {
@@ -107,7 +106,7 @@ public class BeatmapService {
 
   private Beatmap updateBeatmapIfOutdated(Beatmap beatmap) {
     List<pe.nanamochi.banchus.entities.osuapi.Beatmap> osuApiBeatmaps =
-        osuApi.getBeatmaps(beatmap.getBeatmapset().getId());
+        osuApiService.getBeatmaps(beatmap.getBeatmapset().getId());
     if (osuApiBeatmaps == null || osuApiBeatmaps.isEmpty()) return beatmap;
 
     Instant localLastUpdate = beatmap.getBeatmapset().getLastUpdated();

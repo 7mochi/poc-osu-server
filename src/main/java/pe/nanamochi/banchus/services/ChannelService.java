@@ -23,6 +23,14 @@ public class ChannelService {
     return channelRepository.findByName(name);
   }
 
+  public Channel save(Channel channel) {
+    return channelRepository.save(channel);
+  }
+
+  public void delete(Channel channel) {
+    channelRepository.delete(channel);
+  }
+
   public boolean canReadChannel(Channel channel, int userPrivileges) {
     if (channel.getReadPrivileges() == 0) {
       return true;

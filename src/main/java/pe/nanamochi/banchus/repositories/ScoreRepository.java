@@ -2,6 +2,8 @@ package pe.nanamochi.banchus.repositories;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import pe.nanamochi.banchus.entities.BeatmapRankedStatus;
 import pe.nanamochi.banchus.entities.CountryCode;
@@ -29,23 +31,66 @@ public interface ScoreRepository extends JpaRepository<Score, Integer> {
   Score findFirstByBeatmapAndUserAndSubmissionStatusOrderByPerformancePointsDesc(
       Beatmap beatmap, User user, SubmissionStatus submissionStatus);
 
-  // sin mods
-  List<Score> findTop50ByBeatmapAndModeAndSubmissionStatusAndUser_RestrictedFalseOrderByScoreDesc(
-      Beatmap beatmap, Mode mode, SubmissionStatus submissionStatus);
+  @Query(
+      """
+        SELECT s
+        FROM Score s
+        WHERE s.beatmap = :beatmap
+          AND s.mode = :mode
+          AND s.submissionStatus = :status
+          AND FUNCTION('bitand', s.user.privileges, 1) <> 0
+        ORDER BY s.score DESC
+      """)
+  List<Score> findTop50Unrestricted(
+      Beatmap beatmap, Mode mode, @Param("status") SubmissionStatus submissionStatus);
 
-  List<Score>
-      findTop50ByBeatmapAndModeAndSubmissionStatusAndUser_RestrictedFalseAndUser_CountryOrderByScoreDesc(
-          Beatmap beatmap, Mode mode, SubmissionStatus submissionStatus, CountryCode country);
+  @Query(
+      """
+        SELECT s
+        FROM Score s
+        WHERE s.beatmap = :beatmap
+          AND s.mode = :mode
+          AND s.submissionStatus = :status
+          AND s.user.country = :country
+          AND FUNCTION('bitand', s.user.privileges, 1) <> 0
+        ORDER BY s.score DESC
+      """)
+  List<Score> findTop50UnrestrictedByCountry(
+      Beatmap beatmap,
+      Mode mode,
+      @Param("status") SubmissionStatus submissionStatus,
+      CountryCode country);
 
-  List<Score>
-      findTop50ByBeatmapAndModeAndModsAndSubmissionStatusAndUser_RestrictedFalseOrderByScoreDesc(
-          Beatmap beatmap, Mode mode, int mods, SubmissionStatus submissionStatus);
+  @Query(
+      """
+        SELECT s
+        FROM Score s
+        WHERE s.beatmap = :beatmap
+          AND s.mode = :mode
+          AND s.mods = :mods
+          AND s.submissionStatus = :status
+          AND FUNCTION('bitand', s.user.privileges, 1) <> 0
+        ORDER BY s.score DESC
+      """)
+  List<Score> findTop50UnrestrictedWithMods(
+      Beatmap beatmap, Mode mode, int mods, @Param("status") SubmissionStatus submissionStatus);
 
-  List<Score>
-      findTop50ByBeatmapAndModeAndModsAndSubmissionStatusAndUser_RestrictedFalseAndUser_CountryOrderByScoreDesc(
-          Beatmap beatmap,
-          Mode mode,
-          int mods,
-          SubmissionStatus submissionStatus,
-          CountryCode country);
+  @Query(
+      """
+        SELECT s
+        FROM Score s
+        WHERE s.beatmap = :beatmap
+          AND s.mode = :mode
+          AND s.mods = :mods
+          AND s.submissionStatus = :status
+          AND s.user.country = :country
+          AND FUNCTION('bitand', s.user.privileges, 1) <> 0
+        ORDER BY s.score DESC
+      """)
+  List<Score> findTop50UnrestrictedWithModsByCountry(
+      Beatmap beatmap,
+      Mode mode,
+      int mods,
+      @Param("status") SubmissionStatus submissionStatus,
+      CountryCode country);
 }

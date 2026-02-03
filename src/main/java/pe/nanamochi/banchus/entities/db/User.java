@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import lombok.*;
 import pe.nanamochi.banchus.entities.CountryCode;
+import pe.nanamochi.banchus.entities.ServerPrivileges;
 
 @Entity
 @Data
@@ -27,12 +28,14 @@ public class User {
   @Column(name = "country", length = 2, nullable = false)
   private CountryCode country;
 
-  @Column(name = "restricted", nullable = false)
-  private boolean restricted;
-
   @Column(name = "silence_end")
   private Instant silenceEnd;
 
   @Column(name = "privileges", nullable = false)
-  private int privileges;
+  private int privileges = 1;
+
+  public boolean isRestricted() {
+    return !ServerPrivileges.fromBitmask(this.getPrivileges())
+        .contains(ServerPrivileges.UNRESTRICTED);
+  }
 }

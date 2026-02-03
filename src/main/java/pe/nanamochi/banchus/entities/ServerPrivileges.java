@@ -1,5 +1,6 @@
 package pe.nanamochi.banchus.entities;
 
+import java.util.Arrays;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,7 +8,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum ServerPrivileges {
-  UNRESTRICTED(1 << 0),
+  UNRESTRICTED(1),
   SUBMITTED_HARDWARE_IDENTITY(1 << 1),
   SUPPORTER(1 << 4),
   PREMIUM(1 << 5),
@@ -18,6 +19,12 @@ public enum ServerPrivileges {
   SUPER_ADMIN(1 << 30);
 
   private final int value;
+
+  public static List<ServerPrivileges> fromBitmask(int bitmask) {
+    return Arrays.stream(ServerPrivileges.values())
+        .filter(p -> (bitmask & p.getValue()) != 0)
+        .toList();
+  }
 
   public static int toBitmask(List<ServerPrivileges> privileges) {
     int bitmask = 0;

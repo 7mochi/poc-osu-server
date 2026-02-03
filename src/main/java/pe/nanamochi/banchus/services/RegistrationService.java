@@ -52,7 +52,6 @@ public class RegistrationService {
       user.setEmail(email);
       user.setPasswordMd5(Security.getMd5(passwordPlainText));
       user.setCountry(CountryCode.KP); // Default to North Korea for now
-      user.setRestricted(false);
 
       User createdUser = userService.createUser(user);
       statService.createAllGamemodes(createdUser);

@@ -52,14 +52,15 @@ CREATE TABLE beatmapsets
 
 CREATE TABLE channels
 (
-    id               VARCHAR(36)  NOT NULL,
-    name             VARCHAR(32)  NOT NULL,
+    id               VARCHAR(36)  NOT NULL DEFAULT (UUID()),
+    name             VARCHAR(96)  NOT NULL,
     topic            VARCHAR(256) NOT NULL,
     read_privileges  INT          NOT NULL,
     write_privileges INT          NOT NULL,
     auto_join        BIT(1)       NOT NULL,
     created_at       datetime     NOT NULL,
     updated_at       datetime     NOT NULL,
+    temporary        BIT(1)       NOT NULL,
     CONSTRAINT pk_channels PRIMARY KEY (id)
 );
 
@@ -108,7 +109,7 @@ CREATE TABLE sessions
     mods                      INT          NOT NULL,
     pm_private                BIT(1)       NOT NULL,
     receive_match_updates     BIT(1)       NOT NULL,
-    spectator_host_session_id BINARY(16)   NULL,
+    spectator_host_session_id VARCHAR(36)  NULL,
     away_message              VARCHAR(64)  NOT NULL,
     multiplayer_match_id      INT          NULL,
     last_communicated_at      datetime     NOT NULL,
@@ -154,9 +155,8 @@ CREATE TABLE users
     email        VARCHAR(64) NOT NULL,
     password_md5 VARCHAR(32) NOT NULL,
     country      SMALLINT    NOT NULL,
-    restricted   BIT(1)      NOT NULL,
     silence_end  datetime    NULL,
-    privileges   INT         NOT NULL,
+    privileges   INT         NOT NULL DEFAULT 1,
     CONSTRAINT pk_users PRIMARY KEY (id)
 );
 

@@ -57,6 +57,14 @@ public class PacketReader {
       return readChannelJoin(stream);
     } else if (packetId == Packets.OSU_CHANNEL_LEAVE.getId()) {
       return readChannelLeave(stream);
+    } else if (packetId == Packets.OSU_START_SPECTATING.getId()) {
+      return readStartSpectating(stream);
+    } else if (packetId == Packets.OSU_STOP_SPECTATING.getId()) {
+      return readStopSpectating(stream);
+    } else if (packetId == Packets.OSU_SPECTATE_FRAMES.getId()) {
+      return readSpectateFrames(stream);
+    } else if (packetId == Packets.OSU_CANT_SPECTATE.getId()) {
+      return readCantSpectate(stream);
     } else {
       logger.warn("Packet id {} not supported yet.", packetId);
       return null;
@@ -107,7 +115,7 @@ public class PacketReader {
     return new StatusUpdateRequestPacket();
   }
 
-  public PongPacket readPong(InputStream stream) throws IOException {
+  public PongPacket readPong(InputStream stream) {
     // TODO: idk
     return new PongPacket();
   }
@@ -121,12 +129,12 @@ public class PacketReader {
     return packet;
   }
 
-  public ReceiveUpdatesPacket readReceiveUpdates(InputStream stream) throws IOException {
+  public ReceiveUpdatesPacket readReceiveUpdates(InputStream stream) {
     // TODO: idk
     return new ReceiveUpdatesPacket();
   }
 
-  public UserStatsRequestPacket readUserStatsRequest(InputStream stream) throws IOException {
+  public UserStatsRequestPacket readUserStatsRequest(InputStream stream) {
     // TODO: idk
     return new UserStatsRequestPacket();
   }
@@ -141,5 +149,67 @@ public class PacketReader {
     ChannelLeavePacket packet = new ChannelLeavePacket();
     packet.setName(reader.readString(stream));
     return packet;
+  }
+
+  private Packet readStartSpectating(InputStream stream) throws IOException {
+    StartSpectatingPacket packet = new StartSpectatingPacket();
+    packet.setUserId(reader.readInt32(stream));
+    return packet;
+  }
+
+  private Packet readSpectateFrames(InputStream stream) throws IOException {
+    SpectateFramesPacket packet = new SpectateFramesPacket();
+    ReplayFrameBundle replayFrameBundle = new ReplayFrameBundle();
+
+    replayFrameBundle.setExtra(reader.readUint32(stream));
+    int replayFrameCount = reader.readUint16(stream);
+
+    List<ReplayFrame> replayFrames = new ArrayList<>();
+    for (int i = 0; i < replayFrameCount; i++) {
+      ReplayFrame frame = new ReplayFrame();
+      frame.setButtonState(reader.readUint8(stream));
+      frame.setTaikoByte(reader.readUint8(stream));
+      frame.setX(reader.readFloat32(stream));
+      frame.setY(reader.readFloat32(stream));
+      frame.setTime(reader.readInt32(stream));
+      replayFrames.add(frame);
+    }
+    replayFrameBundle.setFrames(replayFrames);
+    replayFrameBundle.setAction(ReplayAction.fromValue(reader.readUint8(stream)));
+
+    ScoreFrame scoreFrame = new ScoreFrame();
+    scoreFrame.setTime(reader.readInt32(stream));
+    scoreFrame.setId(reader.readUint8(stream));
+    scoreFrame.setTotal300(reader.readUint16(stream));
+    scoreFrame.setTotal100(reader.readUint16(stream));
+    scoreFrame.setTotal50(reader.readUint16(stream));
+    scoreFrame.setTotalGeki(reader.readUint16(stream));
+    scoreFrame.setTotalKatu(reader.readUint16(stream));
+    scoreFrame.setTotalMiss(reader.readUint16(stream));
+    scoreFrame.setTotalScore(reader.readUint32(stream));
+    scoreFrame.setMaxCombo(reader.readUint16(stream));
+    scoreFrame.setCurrentCombo(reader.readUint16(stream));
+    scoreFrame.setPerfect(reader.readUint8(stream) == 1);
+    scoreFrame.setHp(reader.readUint8(stream));
+    scoreFrame.setTagByte(reader.readUint8(stream));
+    scoreFrame.setUsingScoreV2(reader.readUint8(stream) == 1);
+    if (scoreFrame.isUsingScoreV2()) {
+      scoreFrame.setComboPortion((float) reader.readFloat64(stream));
+      scoreFrame.setBonusPortion((float) reader.readFloat64(stream));
+    }
+
+    replayFrameBundle.setFrame(scoreFrame);
+    replayFrameBundle.setSequence(reader.readUint16(stream));
+
+    packet.setReplayFrameBundle(replayFrameBundle);
+    return packet;
+  }
+
+  private Packet readStopSpectating(InputStream stream) {
+    return new StopSpectatingPacket();
+  }
+
+  private Packet readCantSpectate(InputStream stream) {
+    return new CantSpectatePacket();
   }
 }

@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import org.springframework.stereotype.Component;
+import pe.nanamochi.banchus.entities.ReplayFrame;
+import pe.nanamochi.banchus.entities.ScoreFrame;
 import pe.nanamochi.banchus.io.data.BanchoDataWriter;
 import pe.nanamochi.banchus.io.data.IDataWriter;
 import pe.nanamochi.banchus.packets.server.*;
@@ -39,6 +41,15 @@ public class PacketWriter {
       case BANCHO_CHANNEL_AVAILABLE -> write(stream, (ChannelAvailablePacket) packet);
       case BANCHO_LOGIN_PERMISSIONS -> write(stream, (LoginPermissionsPacket) packet);
       case BANCHO_CHANNEL_JOIN_SUCCESS -> write(stream, (ChannelJoinSuccessPacket) packet);
+      case BANCHO_CHANNEL_AVAILABLE_AUTOJOIN ->
+          write(stream, (ChannelAvailableAutoJoinPacket) packet);
+      case BANCHO_SPECTATOR_JOINED -> write(stream, (SpectatorJoinedPacket) packet);
+      case BANCHO_SPECTATOR_LEFT -> write(stream, (SpectatorLeftPacket) packet);
+      case BANCHO_FELLOW_SPECTATOR_JOINED -> write(stream, (FellowSpectatorJoinedPacket) packet);
+      case BANCHO_FELLOW_SPECTATOR_LEFT -> write(stream, (FellowSpectatorLeftPacket) packet);
+      case BANCHO_CHANNEL_REVOKED -> write(stream, (ChannelRevokedPacket) packet);
+      case BANCHO_SPECTATE_FRAMES -> write(stream, (SpectateFramesPacket) packet);
+      case BANCHO_SPECTATOR_CANT_SPECTATE -> write(stream, (SpectatorCantSpectatePacket) packet);
       default ->
           throw new UnsupportedOperationException(
               "Cannot write packet type: " + packet.getPacketType());
@@ -159,6 +170,16 @@ public class PacketWriter {
     writeRawPacket(stream, Packets.BANCHO_CHANNEL_AVAILABLE, buffer.toByteArray());
   }
 
+  private void write(OutputStream stream, ChannelAvailableAutoJoinPacket packet)
+      throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeString(buffer, packet.getRealname());
+    writer.writeString(buffer, packet.getTopic());
+    writer.writeInt32(buffer, packet.getUserCount());
+
+    writeRawPacket(stream, Packets.BANCHO_CHANNEL_AVAILABLE_AUTOJOIN, buffer.toByteArray());
+  }
+
   private void write(OutputStream stream, LoginPermissionsPacket packet) throws IOException {
     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     writer.writeInt32(buffer, packet.getPrivileges());
@@ -169,5 +190,85 @@ public class PacketWriter {
     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     writer.writeString(buffer, packet.getName());
     writeRawPacket(stream, Packets.BANCHO_CHANNEL_JOIN_SUCCESS, buffer.toByteArray());
+  }
+
+  private void write(OutputStream stream, SpectatorJoinedPacket packet) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeInt32(buffer, packet.getUserId());
+    writeRawPacket(stream, Packets.BANCHO_SPECTATOR_JOINED, buffer.toByteArray());
+  }
+
+  private void write(OutputStream stream, SpectatorLeftPacket packet) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeInt32(buffer, packet.getUserId());
+    writeRawPacket(stream, Packets.BANCHO_SPECTATOR_LEFT, buffer.toByteArray());
+  }
+
+  private void write(OutputStream stream, FellowSpectatorJoinedPacket packet) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeInt32(buffer, packet.getUserId());
+    writeRawPacket(stream, Packets.BANCHO_FELLOW_SPECTATOR_JOINED, buffer.toByteArray());
+  }
+
+  private void write(OutputStream stream, FellowSpectatorLeftPacket packet) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeInt32(buffer, packet.getUserId());
+    writeRawPacket(stream, Packets.BANCHO_FELLOW_SPECTATOR_LEFT, buffer.toByteArray());
+  }
+
+  private void write(OutputStream stream, ChannelRevokedPacket packet) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeString(buffer, packet.getChannelName());
+    writeRawPacket(stream, Packets.BANCHO_CHANNEL_REVOKED, buffer.toByteArray());
+  }
+
+  private void write(OutputStream stream, SpectateFramesPacket packet) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeUint32(buffer, packet.getReplayFrameBundle().getExtra());
+    writer.writeUint16(buffer, packet.getReplayFrameBundle().getFrames().size());
+
+    for (ReplayFrame frame : packet.getReplayFrameBundle().getFrames()) {
+      writer.writeUint8(buffer, frame.getButtonState());
+      writer.writeUint8(buffer, frame.getTaikoByte());
+      writer.writeFloat32(buffer, frame.getX());
+      writer.writeFloat32(buffer, frame.getY());
+      writer.writeInt32(buffer, frame.getTime());
+    }
+
+    writer.writeUint8(buffer, packet.getReplayFrameBundle().getAction().getValue());
+
+    ScoreFrame frame = packet.getReplayFrameBundle().getFrame();
+    if (frame != null) {
+      writer.writeInt32(buffer, frame.getTime());
+      writer.writeUint8(buffer, frame.getId());
+      writer.writeUint16(buffer, frame.getTotal300());
+      writer.writeUint16(buffer, frame.getTotal100());
+      writer.writeUint16(buffer, frame.getTotal50());
+      writer.writeUint16(buffer, frame.getTotalGeki());
+      writer.writeUint16(buffer, frame.getTotalKatu());
+      writer.writeUint16(buffer, frame.getTotalMiss());
+      writer.writeUint32(buffer, frame.getTotalScore());
+      writer.writeUint16(buffer, frame.getMaxCombo());
+      writer.writeUint16(buffer, frame.getCurrentCombo());
+      writer.writeBoolean(buffer, frame.isPerfect());
+      writer.writeUint8(buffer, frame.getHp());
+      writer.writeUint8(buffer, frame.getTagByte());
+      writer.writeBoolean(buffer, frame.isUsingScoreV2());
+
+      if (frame.isUsingScoreV2()) {
+        writer.writeFloat64(buffer, frame.getComboPortion());
+        writer.writeFloat64(buffer, frame.getBonusPortion());
+      }
+    }
+
+    writer.writeUint16(buffer, (short) packet.getReplayFrameBundle().getSequence());
+
+    writeRawPacket(stream, Packets.BANCHO_SPECTATE_FRAMES, buffer.toByteArray());
+  }
+
+  private void write(OutputStream stream, SpectatorCantSpectatePacket packet) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    writer.writeUint32(buffer, packet.getUserId());
+    writeRawPacket(stream, Packets.BANCHO_SPECTATOR_CANT_SPECTATE, buffer.toByteArray());
   }
 }

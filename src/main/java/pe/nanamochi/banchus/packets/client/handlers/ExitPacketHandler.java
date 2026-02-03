@@ -19,11 +19,9 @@ import pe.nanamochi.banchus.packets.PacketWriter;
 import pe.nanamochi.banchus.packets.Packets;
 import pe.nanamochi.banchus.packets.client.ExitPacket;
 import pe.nanamochi.banchus.packets.server.ChannelAvailablePacket;
+import pe.nanamochi.banchus.packets.server.ChannelRevokedPacket;
 import pe.nanamochi.banchus.packets.server.UserQuitPacket;
-import pe.nanamochi.banchus.services.ChannelMembersService;
-import pe.nanamochi.banchus.services.ChannelService;
-import pe.nanamochi.banchus.services.PacketBundleService;
-import pe.nanamochi.banchus.services.SessionService;
+import pe.nanamochi.banchus.services.*;
 
 @Component
 public class ExitPacketHandler extends AbstractPacketHandler<ExitPacket> {
@@ -35,6 +33,7 @@ public class ExitPacketHandler extends AbstractPacketHandler<ExitPacket> {
   @Autowired private SessionService sessionService;
   @Autowired private ChannelService channelService;
   @Autowired private ChannelMembersService channelMembersService;
+  @Autowired private SpectatorService spectatorService;
 
   @Override
   public Packets getPacketType() {
@@ -60,10 +59,43 @@ public class ExitPacketHandler extends AbstractPacketHandler<ExitPacket> {
 
     session = sessionService.deleteSession(session);
 
-    // Leave channels the osu session is in
+    // Handle the user spectating another user
+    if (session.getSpectatorHostSessionId() != null) {
+      spectatorService.remove(session.getSpectatorHostSessionId(), session.getId());
+    } else {
+      // Handle some users spectating us
+      Set<UUID> ourSpectatorsId = spectatorService.getMembers(session.getId());
+
+      if (!ourSpectatorsId.isEmpty()) {
+        // We have spectators
+        Channel spectatorChannel = channelService.findByName("#spec_" + session.getId());
+
+        for (UUID spectatorSessionId : ourSpectatorsId) {
+          // Remove them from our spectators
+          spectatorService.remove(session.getId(), spectatorSessionId);
+
+          // Remove them from the #spectator channel
+          channelMembersService.removeMemberFromChannel(
+              spectatorChannel, sessionService.getSessionByID(spectatorSessionId));
+          ByteArrayOutputStream stream = new ByteArrayOutputStream();
+          packetWriter.writePacket(stream, new ChannelRevokedPacket("#spectator"));
+          packetBundleService.enqueue(spectatorSessionId, new PacketBundle(stream.toByteArray()));
+        }
+
+        // Remove us from the #spectator channel
+        channelMembersService.removeMemberFromChannel(spectatorChannel, session);
+
+        // Delete the #spectator channel
+        channelService.delete(spectatorChannel);
+      }
+    }
+
+    // TODO: Multiplayer
+
+    // Handle the player being in any chat channels
     for (Channel channel : channelService.getAllChannels()) {
       if (channelMembersService.removeMemberFromChannel(channel, session) != null) {
-        // Inform everyone in the channel that we left
+        // Update the channel info for everyone else
         Set<UUID> currentChannelMembers = channelMembersService.getMembers(channel.getId());
 
         for (UUID sessionId : currentChannelMembers) {
@@ -77,17 +109,15 @@ public class ExitPacketHandler extends AbstractPacketHandler<ExitPacket> {
       }
     }
 
-    // TODO: Spectator
-
-    // TODO: Multiplayer
-
     // Tell everyone else we logout
-    // TODO: Only do this if our privileges allow it (unrestricted)
-    for (Session otherOsuSession : sessionService.getAllSessions()) {
-      ByteArrayOutputStream stream = new ByteArrayOutputStream();
-      packetWriter.writePacket(
-          stream, new UserQuitPacket(session.getUser().getId(), QuitState.GONE));
-      packetBundleService.enqueue(otherOsuSession.getId(), new PacketBundle(stream.toByteArray()));
+    if (!session.getUser().isRestricted()) {
+      for (Session otherOsuSession : sessionService.getAllSessions()) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        packetWriter.writePacket(
+            stream, new UserQuitPacket(session.getUser().getId(), QuitState.GONE));
+        packetBundleService.enqueue(
+            otherOsuSession.getId(), new PacketBundle(stream.toByteArray()));
+      }
     }
 
     logger.info("User {} has logged out.", session.getUser().getUsername());

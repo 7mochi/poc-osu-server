@@ -80,25 +80,18 @@ public class ScoreService {
       Beatmap beatmap, Mode mode, Integer mods, SubmissionStatus status, CountryCode country) {
     if (mods != null) {
       if (country != null) {
-        return scoreRepository
-            .findTop50ByBeatmapAndModeAndModsAndSubmissionStatusAndUser_RestrictedFalseAndUser_CountryOrderByScoreDesc(
-                beatmap, mode, mods, status, country);
+        return scoreRepository.findTop50UnrestrictedWithModsByCountry(
+            beatmap, mode, mods, status, country);
       }
 
-      return scoreRepository
-          .findTop50ByBeatmapAndModeAndModsAndSubmissionStatusAndUser_RestrictedFalseOrderByScoreDesc(
-              beatmap, mode, mods, status);
+      return scoreRepository.findTop50UnrestrictedWithMods(beatmap, mode, mods, status);
     }
 
     if (country != null) {
-      return scoreRepository
-          .findTop50ByBeatmapAndModeAndSubmissionStatusAndUser_RestrictedFalseAndUser_CountryOrderByScoreDesc(
-              beatmap, mode, status, country);
+      return scoreRepository.findTop50UnrestrictedByCountry(beatmap, mode, status, country);
     }
 
-    return scoreRepository
-        .findTop50ByBeatmapAndModeAndSubmissionStatusAndUser_RestrictedFalseOrderByScoreDesc(
-            beatmap, mode, status);
+    return scoreRepository.findTop50Unrestricted(beatmap, mode, status);
   }
 
   public String formatLeaderboardResponse(

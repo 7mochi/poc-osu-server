@@ -49,7 +49,15 @@ public class MessageHandler extends AbstractPacketHandler<MessagePacket> {
     if (packet.getTarget().equals("#multiplayer")) {
       // TODO: Handle multiplayer chat
     } else if (packet.getTarget().equals("#spectator")) {
-      // TODO: Handle spectator chat
+      // We may be spectating someone, or may be the host of spectators
+      UUID spectatorHostSessionId;
+      if (session.getSpectatorHostSessionId() != null) {
+        spectatorHostSessionId = session.getSpectatorHostSessionId();
+      } else {
+        spectatorHostSessionId = session.getId();
+      }
+
+      channelName = "#spec_" + spectatorHostSessionId;
     } else {
       channelName = packet.getTarget();
     }

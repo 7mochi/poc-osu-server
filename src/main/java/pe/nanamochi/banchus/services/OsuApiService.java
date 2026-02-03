@@ -62,7 +62,6 @@ public class OsuApiService {
             .queryParam("s", beatmapSetId)
             .queryParam("k", apiKey);
 
-    // System.out.println(builder.toUriString());
     ResponseEntity<List<Beatmap>> response =
         restTemplate.exchange(
             builder.toUriString(), HttpMethod.GET, null, new ParameterizedTypeReference<>() {});

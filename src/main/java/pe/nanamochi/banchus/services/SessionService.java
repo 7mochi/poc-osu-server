@@ -31,6 +31,16 @@ public class SessionService {
     return null;
   }
 
+  public Session getPrimarySessionByUserId(int userId) {
+    List<Session> osuSessions = getAllSessions();
+    for (Session session : osuSessions) {
+      if (session.getUser().getId() == userId && session.isPrimarySession()) {
+        return session;
+      }
+    }
+    return null;
+  }
+
   public Session saveSession(Session session) {
     return sessionRepository.save(session);
   }

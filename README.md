@@ -17,6 +17,7 @@ A very WIP osu! server.
 - osu!direct
 - Score submission (only for standard mode for now)
 - Beatmap leaderboard (National, global and per-mods, friends leaderboards coming soon)
+= Spectating
 
 ## TODO
 Check our roadmap here: [Roadmap](https://github.com/users/7mochi/projects/2/views/1)

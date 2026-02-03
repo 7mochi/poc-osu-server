@@ -6,10 +6,10 @@ VALUES (1, 'BanchoBot', 'bancho@osupe.ru', '098f6bcd4621d373cade4e832627b4f6', 1
 ALTER SEQUENCE user_seq RESTART WITH 5;
 
 INSERT INTO channels (id, name, topic, read_privileges, write_privileges, auto_join, temporary, created_at, updated_at)
-VALUES (UUID(), '#osu', 'General discussion.', 0, 0, 1, false, NOW(), NOW()),
-       (UUID(), '#lobby', 'General multiplayer lobby chat.', 0, 1 << 0, 1, false, NOW(), NOW()),
-       (UUID(), '#announce', 'Announcements from the server.', 1 << 0, 1 << 9, 1, false, NOW(), NOW()),
-       (UUID(), '#help', 'Help and support.', 1 << 0, 1 << 0, 1, false, NOW(), NOW()),
+VALUES (UUID(), '#osu', 'General discussion.', 0, 1, 1, false, NOW(), NOW()),
+       (UUID(), '#lobby', 'General multiplayer lobby chat.', 0, 1, 0, false, NOW(), NOW()),
+       (UUID(), '#announce', 'Announcements from the server.', 0, 1 << 30, 1, false, NOW(), NOW()),
+       (UUID(), '#help', 'Help and support.', 1, 0, 1, false, NOW(), NOW()),
        (UUID(), '#staff', 'General discussion for staff members.', (1 << 7 | 1 << 9 | 1 << 13 | 1 << 30),
         (1 << 7 | 1 << 9 | 1 << 13 | 1 << 30),
         1, false, NOW(), NOW()),

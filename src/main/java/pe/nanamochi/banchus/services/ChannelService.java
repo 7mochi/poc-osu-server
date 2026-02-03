@@ -36,7 +36,7 @@ public class ChannelService {
       return true;
     }
 
-    return (userPrivileges & channel.getReadPrivileges()) == 0;
+    return (userPrivileges & channel.getReadPrivileges()) != 0;
   }
 
   public boolean canWriteChannel(Channel channel, int userPrivileges) {

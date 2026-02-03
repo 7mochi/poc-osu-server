@@ -8,7 +8,9 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import pe.nanamochi.banchus.commands.CommandProcessor;
 import pe.nanamochi.banchus.entities.PacketBundle;
 import pe.nanamochi.banchus.entities.db.Channel;
 import pe.nanamochi.banchus.entities.db.Session;
@@ -25,10 +27,14 @@ import pe.nanamochi.banchus.services.PacketBundleService;
 public class MessageHandler extends AbstractPacketHandler<MessagePacket> {
   private static final Logger logger = LoggerFactory.getLogger(MessageHandler.class);
 
+  @Value("${banchus.command-prefix}")
+  private String commandPrefix;
+
   private final PacketWriter packetWriter;
   private final PacketBundleService packetBundleService;
   private final ChannelService channelService;
   private final ChannelMembersService channelMembersService;
+  private final CommandProcessor commandProcessor;
 
   @Override
   public Packets getPacketType() {
@@ -108,6 +114,28 @@ public class MessageHandler extends AbstractPacketHandler<MessagePacket> {
       packetBundleService.enqueue(targetSessionId, new PacketBundle(stream.toByteArray()));
     }
 
-    // TODO: handle commands
+    handleCommands(session, packet, targetSessions, channel);
+  }
+
+  private void handleCommands(
+      Session session, MessagePacket packet, Set<UUID> targetSessions, Channel channel)
+      throws IOException {
+    String result =
+        commandProcessor.handle(commandPrefix, packet.getContent(), session.getUser(), channel);
+
+    if (result == null || result.trim().isEmpty()) return;
+
+    if (packet.getContent().startsWith("!help")) {
+      targetSessions = Set.of(session.getId());
+    }
+
+    for (UUID targetSessionId : targetSessions) {
+      ByteArrayOutputStream commandStream = new ByteArrayOutputStream();
+      packetWriter.writePacket(
+          commandStream,
+          new pe.nanamochi.banchus.packets.server.MessagePacket(
+              "BanchoBot", result, packet.getTarget(), 1));
+      packetBundleService.enqueue(targetSessionId, new PacketBundle(commandStream.toByteArray()));
+    }
   }
 }

@@ -42,6 +42,7 @@ banchus:
     redirect-url: ${MENU_ICON_REDIRECT_URL}
   seasonal-backgrounds:
     urls: ${SEASONAL_BACKGROUND_URLS:}
+  command-prefix: ${COMMAND_PREFIX:!}
   osu-api:
     v1:
       key: ${OSU_API_V1_KEY}

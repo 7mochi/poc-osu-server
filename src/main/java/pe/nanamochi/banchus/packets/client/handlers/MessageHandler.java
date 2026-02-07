@@ -37,6 +37,11 @@ public class MessageHandler extends AbstractPacketHandler<MessagePacket> {
   private final CommandProcessor commandProcessor;
 
   @Override
+  public boolean isRestricted() {
+    return true;
+  }
+
+  @Override
   public Packets getPacketType() {
     return Packets.OSU_MESSAGE;
   }
@@ -97,9 +102,6 @@ public class MessageHandler extends AbstractPacketHandler<MessagePacket> {
     if (packet.getContent().length() > 2000) {
       packet.setContent(packet.getContent().substring(0, 2000) + "...");
     }
-
-    // If the user is restricted, they cannot send messages
-    if (session.getUser().isRestricted()) return;
 
     // Send message to everyone else
     ByteArrayOutputStream stream = new ByteArrayOutputStream();

@@ -33,6 +33,11 @@ public class ChannelLeaveHandler extends AbstractPacketHandler<ChannelLeavePacke
   private final ChannelMembersService channelMembersService;
 
   @Override
+  public boolean isRestricted() {
+    return true;
+  }
+
+  @Override
   public Packets getPacketType() {
     return Packets.OSU_CHANNEL_LEAVE;
   }

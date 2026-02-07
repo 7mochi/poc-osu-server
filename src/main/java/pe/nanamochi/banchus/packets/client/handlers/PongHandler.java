@@ -15,6 +15,11 @@ public class PongHandler extends AbstractPacketHandler<PongPacket> {
   private static final Logger logger = LoggerFactory.getLogger(PongHandler.class);
 
   @Override
+  public boolean isRestricted() {
+    return true;
+  }
+
+  @Override
   public Packets getPacketType() {
     return Packets.OSU_PONG;
   }

@@ -32,6 +32,11 @@ public class UserStatusHandler extends AbstractPacketHandler<UserStatusPacket> {
   private final RankingService rankingService;
 
   @Override
+  public boolean isRestricted() {
+    return true;
+  }
+
+  @Override
   public Packets getPacketType() {
     return Packets.OSU_USER_STATUS;
   }

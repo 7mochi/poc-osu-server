@@ -25,6 +25,11 @@ public class SpectateFramesHandler extends AbstractPacketHandler<SpectateFramesP
   private final SpectatorService spectatorService;
 
   @Override
+  public boolean isRestricted() {
+    return true;
+  }
+
+  @Override
   public Packets getPacketType() {
     return Packets.OSU_SPECTATE_FRAMES;
   }

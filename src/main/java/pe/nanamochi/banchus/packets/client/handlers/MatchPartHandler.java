@@ -122,6 +122,10 @@ public class MatchPartHandler extends AbstractPacketHandler<MatchPartPacket> {
         // Delete the multiplayer channel
         channelService.delete(matchChannel);
 
+        // Clear match from session
+        session.setMultiplayerMatchId(-1);
+        sessionService.updateSession(session);
+
         logger.info(
             "Match {} disbanded as the host {} has left and no players remain.",
             match.getMatchId(),

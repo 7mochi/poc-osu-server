@@ -15,6 +15,11 @@ public class ReceiveUpdatesHandler extends AbstractPacketHandler<ReceiveUpdatesP
   private static final Logger logger = LoggerFactory.getLogger(ReceiveUpdatesHandler.class);
 
   @Override
+  public boolean isRestricted() {
+    return true;
+  }
+
+  @Override
   public Packets getPacketType() {
     return Packets.OSU_RECEIVE_UPDATES;
   }

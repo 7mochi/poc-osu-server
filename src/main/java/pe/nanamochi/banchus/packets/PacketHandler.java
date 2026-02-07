@@ -47,6 +47,8 @@ public class PacketHandler {
       ByteArrayOutputStream responseStream)
       throws IOException {
 
+    // Prevent handler to be executed for restricted users
+    if (session.getUser().isRestricted() && handler.isRestricted()) return;
     handler.handle((handler.getPacketClass().cast(packet)), session, responseStream);
   }
 }

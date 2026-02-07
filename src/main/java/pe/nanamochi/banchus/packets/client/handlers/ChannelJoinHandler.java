@@ -34,6 +34,11 @@ public class ChannelJoinHandler extends AbstractPacketHandler<ChannelJoinPacket>
   private final ChannelMembersService channelMembersService;
 
   @Override
+  public boolean isRestricted() {
+    return true;
+  }
+
+  @Override
   public Packets getPacketType() {
     return Packets.OSU_CHANNEL_JOIN;
   }

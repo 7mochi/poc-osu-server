@@ -29,6 +29,11 @@ public class StatusUpdateRequestHandler extends AbstractPacketHandler<StatusUpda
   private final PacketBundleService packetBundleService;
 
   @Override
+  public boolean isRestricted() {
+    return true;
+  }
+
+  @Override
   public Packets getPacketType() {
     return Packets.OSU_STATUS_UPDATE_REQUEST;
   }

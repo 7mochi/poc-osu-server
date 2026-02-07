@@ -15,6 +15,11 @@ public class PrivateMessageHandler extends AbstractPacketHandler<PrivateMessageP
   private static final Logger logger = LoggerFactory.getLogger(PrivateMessageHandler.class);
 
   @Override
+  public boolean isRestricted() {
+    return true;
+  }
+
+  @Override
   public Packets getPacketType() {
     return Packets.OSU_PRIVATE_MESSAGE;
   }

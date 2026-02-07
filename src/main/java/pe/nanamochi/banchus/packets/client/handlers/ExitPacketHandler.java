@@ -46,6 +46,11 @@ public class ExitPacketHandler extends AbstractPacketHandler<ExitPacket> {
   private final MatchBroadcastService matchBroadcastService;
 
   @Override
+  public boolean isRestricted() {
+    return true;
+  }
+
+  @Override
   public Packets getPacketType() {
     return Packets.OSU_EXIT;
   }
@@ -101,7 +106,7 @@ public class ExitPacketHandler extends AbstractPacketHandler<ExitPacket> {
     }
 
     // Handle the player being in a multiplayer match
-    if (session.getMultiplayerMatchId() != null) {
+    if (session.getMultiplayerMatchId() != null && session.getMultiplayerMatchId() != -1) {
       MultiplayerMatch match = multiplayerService.findById(session.getMultiplayerMatchId());
 
       // Fetch our slot

@@ -33,6 +33,11 @@ public class StartSpectatingHandler extends AbstractPacketHandler<StartSpectatin
   private final ChannelMembersService channelMembersService;
 
   @Override
+  public boolean isRestricted() {
+    return true;
+  }
+
+  @Override
   public Packets getPacketType() {
     return Packets.OSU_START_SPECTATING;
   }

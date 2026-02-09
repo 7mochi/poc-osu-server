@@ -1,4 +1,4 @@
-package pe.nanamochi.banchus.controllers;
+package pe.nanamochi.banchus.controllers.web;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.List;

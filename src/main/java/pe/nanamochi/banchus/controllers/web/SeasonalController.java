@@ -1,4 +1,4 @@
-package pe.nanamochi.banchus.controllers;
+package pe.nanamochi.banchus.controllers.web;
 
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;

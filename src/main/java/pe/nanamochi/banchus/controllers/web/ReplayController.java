@@ -1,4 +1,4 @@
-package pe.nanamochi.banchus.controllers;
+package pe.nanamochi.banchus.controllers.web;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

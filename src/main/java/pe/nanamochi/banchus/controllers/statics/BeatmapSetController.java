@@ -1,4 +1,4 @@
-package pe.nanamochi.banchus.controllers;
+package pe.nanamochi.banchus.controllers.statics;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

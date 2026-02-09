@@ -12,7 +12,7 @@
 
 	<properties>
 		<java.version>25</java.version>
-		<spotless-maven-plugin.version>2.46.1</spotless-maven-plugin.version>
+		<spotless-maven-plugin.version>3.2.1</spotless-maven-plugin.version>
 		<git-build-hook.version>3.6.0</git-build-hook.version>
 		<spring-boot.version>4.1.0-M1</spring-boot.version>
 		<mariadb.version>3.5.7</mariadb.version>
@@ -196,7 +196,7 @@
 							<include>src/test/java/**/*.java</include>
 						</includes>
 						<googleJavaFormat>
-							<version>1.24.0</version>
+							<version>1.34.1</version>
 							<style>GOOGLE</style>
 							<reflowLongStrings>true</reflowLongStrings>
 							<reorderImports>true</reorderImports>

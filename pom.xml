@@ -11,7 +11,7 @@
 	</parent>
 
 	<properties>
-		<java.version>21</java.version>
+		<java.version>25</java.version>
 		<spotless-maven-plugin.version>2.46.1</spotless-maven-plugin.version>
 		<git-build-hook.version>3.6.0</git-build-hook.version>
 		<spring-boot.version>4.1.0-M1</spring-boot.version>

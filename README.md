@@ -3,7 +3,7 @@
 A very WIP osu! server.
 
 ## Requirements
-- Java 21 or higher
+- Java 25
 - Maven
 - MariaDB
 - Redis

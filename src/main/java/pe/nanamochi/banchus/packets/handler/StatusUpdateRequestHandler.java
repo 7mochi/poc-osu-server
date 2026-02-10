@@ -21,7 +21,7 @@ import pe.nanamochi.banchus.services.protocol.PacketBundleService;
 
 @Component
 @RequiredArgsConstructor
-@HandleClientPacket(Packets.OSU_STATUS_UPDATE_REQUEST)
+@HandleClientPacket(value = Packets.OSU_STATUS_UPDATE_REQUEST, checkForRestriction = true)
 public class StatusUpdateRequestHandler extends AbstractPacketHandler<StatusUpdateRequestPacket> {
   private static final Logger logger = LoggerFactory.getLogger(StatusUpdateRequestHandler.class);
 
@@ -29,11 +29,6 @@ public class StatusUpdateRequestHandler extends AbstractPacketHandler<StatusUpda
   private final RankingService rankingService;
   private final PacketWriter packetWriter;
   private final PacketBundleService packetBundleService;
-
-  @Override
-  public boolean checkForRestriction() {
-    return true;
-  }
 
   @Override
   public void handle(

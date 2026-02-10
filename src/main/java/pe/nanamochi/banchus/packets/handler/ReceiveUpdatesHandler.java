@@ -12,14 +12,9 @@ import pe.nanamochi.banchus.packets.core.HandleClientPacket;
 import pe.nanamochi.banchus.packets.core.Packets;
 
 @Component
-@HandleClientPacket(Packets.OSU_RECEIVE_UPDATES)
+@HandleClientPacket(value = Packets.OSU_RECEIVE_UPDATES, checkForRestriction = true)
 public class ReceiveUpdatesHandler extends AbstractPacketHandler<ReceiveUpdatesPacket> {
   private static final Logger logger = LoggerFactory.getLogger(ReceiveUpdatesHandler.class);
-
-  @Override
-  public boolean checkForRestriction() {
-    return true;
-  }
 
   @Override
   public void handle(

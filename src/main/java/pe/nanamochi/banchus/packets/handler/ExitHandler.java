@@ -36,7 +36,7 @@ import pe.nanamochi.banchus.services.multiplayer.MatchBroadcastService;
 import pe.nanamochi.banchus.services.multiplayer.MultiplayerService;
 import pe.nanamochi.banchus.services.protocol.PacketBundleService;
 
-@HandleClientPacket(Packets.OSU_EXIT)
+@HandleClientPacket(value = Packets.OSU_EXIT, checkForRestriction = true)
 @RequiredArgsConstructor
 public class ExitHandler extends AbstractPacketHandler<ExitPacket> {
   private static final Logger logger = LoggerFactory.getLogger(ExitHandler.class);
@@ -49,11 +49,6 @@ public class ExitHandler extends AbstractPacketHandler<ExitPacket> {
   private final SpectatorService spectatorService;
   private final MultiplayerService multiplayerService;
   private final MatchBroadcastService matchBroadcastService;
-
-  @Override
-  public boolean checkForRestriction() {
-    return true;
-  }
 
   @Override
   public void handle(ExitPacket packet, Session session, ByteArrayOutputStream responseStream)

@@ -11,4 +11,6 @@ import org.springframework.stereotype.Component;
 @Component
 public @interface HandleClientPacket {
   Packets value();
+
+  boolean checkForRestriction() default false;
 }

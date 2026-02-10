@@ -27,7 +27,7 @@ import pe.nanamochi.banchus.services.protocol.PacketBundleService;
 
 @Component
 @RequiredArgsConstructor
-@HandleClientPacket(Packets.OSU_START_SPECTATING)
+@HandleClientPacket(value = Packets.OSU_START_SPECTATING, checkForRestriction = true)
 public class StartSpectatingHandler extends AbstractPacketHandler<StartSpectatingPacket> {
   private static final Logger logger = LoggerFactory.getLogger(StartSpectatingHandler.class);
 
@@ -37,11 +37,6 @@ public class StartSpectatingHandler extends AbstractPacketHandler<StartSpectatin
   private final SpectatorService spectatorService;
   private final ChannelService channelService;
   private final ChannelMembersService channelMembersService;
-
-  @Override
-  public boolean checkForRestriction() {
-    return true;
-  }
 
   @Override
   public void handle(

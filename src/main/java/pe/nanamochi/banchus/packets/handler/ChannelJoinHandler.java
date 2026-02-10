@@ -25,7 +25,7 @@ import pe.nanamochi.banchus.services.protocol.PacketBundleService;
 
 @Component
 @RequiredArgsConstructor
-@HandleClientPacket(Packets.OSU_CHANNEL_JOIN)
+@HandleClientPacket(value = Packets.OSU_CHANNEL_JOIN, checkForRestriction = true)
 public class ChannelJoinHandler extends AbstractPacketHandler<ChannelJoinPacket> {
   private static final Logger logger = LoggerFactory.getLogger(ChannelJoinHandler.class);
 
@@ -34,11 +34,6 @@ public class ChannelJoinHandler extends AbstractPacketHandler<ChannelJoinPacket>
   private final SessionService sessionService;
   private final ChannelService channelService;
   private final ChannelMembersService channelMembersService;
-
-  @Override
-  public boolean checkForRestriction() {
-    return true;
-  }
 
   @Override
   public void handle(

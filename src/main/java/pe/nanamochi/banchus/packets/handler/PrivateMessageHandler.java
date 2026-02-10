@@ -12,14 +12,9 @@ import pe.nanamochi.banchus.packets.core.HandleClientPacket;
 import pe.nanamochi.banchus.packets.core.Packets;
 
 @Component
-@HandleClientPacket(Packets.OSU_PRIVATE_MESSAGE)
+@HandleClientPacket(value = Packets.OSU_PRIVATE_MESSAGE, checkForRestriction = true)
 public class PrivateMessageHandler extends AbstractPacketHandler<PrivateMessagePacket> {
   private static final Logger logger = LoggerFactory.getLogger(PrivateMessageHandler.class);
-
-  @Override
-  public boolean checkForRestriction() {
-    return true;
-  }
 
   @Override
   public void handle(

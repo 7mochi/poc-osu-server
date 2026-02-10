@@ -12,14 +12,9 @@ import pe.nanamochi.banchus.packets.core.HandleClientPacket;
 import pe.nanamochi.banchus.packets.core.Packets;
 
 @Component
-@HandleClientPacket(Packets.OSU_PONG)
+@HandleClientPacket(value = Packets.OSU_PONG, checkForRestriction = true)
 public class PongHandler extends AbstractPacketHandler<PongPacket> {
   private static final Logger logger = LoggerFactory.getLogger(PongHandler.class);
-
-  @Override
-  public boolean checkForRestriction() {
-    return true;
-  }
 
   @Override
   public void handle(PongPacket packet, Session session, ByteArrayOutputStream responseStream)

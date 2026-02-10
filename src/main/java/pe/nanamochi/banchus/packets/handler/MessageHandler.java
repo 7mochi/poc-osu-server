@@ -24,7 +24,7 @@ import pe.nanamochi.banchus.services.protocol.PacketBundleService;
 
 @Component
 @RequiredArgsConstructor
-@HandleClientPacket(Packets.OSU_MESSAGE)
+@HandleClientPacket(value = Packets.OSU_MESSAGE, checkForRestriction = true)
 public class MessageHandler extends AbstractPacketHandler<MessagePacket> {
   private static final Logger logger = LoggerFactory.getLogger(MessageHandler.class);
 
@@ -36,11 +36,6 @@ public class MessageHandler extends AbstractPacketHandler<MessagePacket> {
   private final ChannelService channelService;
   private final ChannelMembersService channelMembersService;
   private final CommandProcessor commandProcessor;
-
-  @Override
-  public boolean checkForRestriction() {
-    return true;
-  }
 
   @Override
   public void handle(MessagePacket packet, Session session, ByteArrayOutputStream responseStream)

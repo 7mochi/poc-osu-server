@@ -12,14 +12,9 @@ import pe.nanamochi.banchus.packets.core.HandleClientPacket;
 import pe.nanamochi.banchus.packets.core.Packets;
 
 @Component
-@HandleClientPacket(Packets.OSU_USER_STATS_REQUEST)
+@HandleClientPacket(value = Packets.OSU_USER_STATS_REQUEST, checkForRestriction = true)
 public class UserStatsRequestHandler extends AbstractPacketHandler<UserStatsRequestPacket> {
   private static final Logger logger = LoggerFactory.getLogger(UserStatsRequestHandler.class);
-
-  @Override
-  public boolean checkForRestriction() {
-    return true;
-  }
 
   @Override
   public void handle(

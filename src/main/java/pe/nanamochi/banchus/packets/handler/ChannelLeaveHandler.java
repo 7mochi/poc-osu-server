@@ -24,7 +24,7 @@ import pe.nanamochi.banchus.services.protocol.PacketBundleService;
 
 @Component
 @RequiredArgsConstructor
-@HandleClientPacket(Packets.OSU_CHANNEL_LEAVE)
+@HandleClientPacket(value = Packets.OSU_CHANNEL_LEAVE, checkForRestriction = true)
 public class ChannelLeaveHandler extends AbstractPacketHandler<ChannelLeavePacket> {
   private static final Logger logger = LoggerFactory.getLogger(ChannelLeaveHandler.class);
 
@@ -33,11 +33,6 @@ public class ChannelLeaveHandler extends AbstractPacketHandler<ChannelLeavePacke
   private final SessionService sessionService;
   private final ChannelService channelService;
   private final ChannelMembersService channelMembersService;
-
-  @Override
-  public boolean checkForRestriction() {
-    return true;
-  }
 
   @Override
   public void handle(

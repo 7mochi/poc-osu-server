@@ -21,10 +21,6 @@ public abstract class AbstractPacketHandler<T extends Packet> {
     this.packetClass = (Class<T>) superClass.getActualTypeArguments()[0];
   }
 
-  public boolean checkForRestriction() {
-    return false;
-  }
-
   public final Packets getPacketType() {
     return packetType;
   }

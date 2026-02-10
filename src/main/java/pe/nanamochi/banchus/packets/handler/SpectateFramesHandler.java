@@ -19,18 +19,13 @@ import pe.nanamochi.banchus.services.protocol.PacketBundleService;
 
 @Component
 @RequiredArgsConstructor
-@HandleClientPacket(Packets.OSU_SPECTATE_FRAMES)
+@HandleClientPacket(value = Packets.OSU_SPECTATE_FRAMES, checkForRestriction = true)
 public class SpectateFramesHandler extends AbstractPacketHandler<SpectateFramesPacket> {
   private static final Logger logger = LoggerFactory.getLogger(SpectateFramesHandler.class);
 
   private final PacketWriter packetWriter;
   private final PacketBundleService packetBundleService;
   private final SpectatorService spectatorService;
-
-  @Override
-  public boolean checkForRestriction() {
-    return true;
-  }
 
   @Override
   public void handle(

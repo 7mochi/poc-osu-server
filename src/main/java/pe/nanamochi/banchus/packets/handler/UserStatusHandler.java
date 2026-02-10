@@ -23,7 +23,7 @@ import pe.nanamochi.banchus.services.protocol.PacketBundleService;
 
 @Component
 @RequiredArgsConstructor
-@HandleClientPacket(Packets.OSU_USER_STATUS)
+@HandleClientPacket(value = Packets.OSU_USER_STATUS, checkForRestriction = true)
 public class UserStatusHandler extends AbstractPacketHandler<UserStatusPacket> {
   private static final Logger logger = LoggerFactory.getLogger(UserStatusHandler.class);
 
@@ -32,11 +32,6 @@ public class UserStatusHandler extends AbstractPacketHandler<UserStatusPacket> {
   private final StatService statService;
   private final SessionService sessionService;
   private final RankingService rankingService;
-
-  @Override
-  public boolean checkForRestriction() {
-    return true;
-  }
 
   @Override
   public void handle(UserStatusPacket packet, Session session, ByteArrayOutputStream responseStream)

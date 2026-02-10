@@ -39,7 +39,10 @@ public class PacketHandler {
       ByteArrayOutputStream responseStream)
       throws IOException {
     logger.debug("Handling packet: {}", packet.getPacketType());
-    if (handler.checkForRestriction() && session.getUser().isRestricted()) return;
+    HandleClientPacket annotation = handler.getClass().getAnnotation(HandleClientPacket.class);
+    boolean shouldCheck = (annotation != null) && annotation.checkForRestriction();
+
+    if (shouldCheck && session.getUser().isRestricted()) return;
 
     handler.handle(handler.getPacketClass().cast(packet), session, responseStream);
   }

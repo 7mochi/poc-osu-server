@@ -19,7 +19,7 @@ import pe.nanamochi.banchus.entities.db.User;
 import pe.nanamochi.banchus.entities.redis.MultiplayerMatch;
 import pe.nanamochi.banchus.entities.redis.MultiplayerSlot;
 import pe.nanamochi.banchus.entities.redis.PacketBundle;
-import pe.nanamochi.banchus.packets.PacketWriter;
+import pe.nanamochi.banchus.packets.core.PacketWriter;
 import pe.nanamochi.banchus.packets.server.ChannelRevokedPacket;
 import pe.nanamochi.banchus.packets.server.MatchDisbandPacket;
 import pe.nanamochi.banchus.packets.server.SilenceInfoPacket;

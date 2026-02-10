@@ -1,19 +1,30 @@
 package pe.nanamochi.banchus.packets.server;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pe.nanamochi.banchus.packets.Packet;
-import pe.nanamochi.banchus.packets.Packets;
+import org.springframework.stereotype.Component;
+import pe.nanamochi.banchus.io.data.IDataWriter;
+import pe.nanamochi.banchus.packets.core.Packets;
+import pe.nanamochi.banchus.packets.core.ServerPacket;
 
+@Component
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TargetIsSilencedPacket implements Packet {
+public class TargetIsSilencedPacket implements ServerPacket {
   private String username;
 
   @Override
   public Packets getPacketType() {
     return Packets.BANCHO_TARGET_IS_SILENCED;
+  }
+
+  @Override
+  public void write(IDataWriter writer, OutputStream stream) throws IOException {
+    MessagePacket messagePacket = new MessagePacket("", "", username, -1);
+    messagePacket.write(writer, stream);
   }
 }

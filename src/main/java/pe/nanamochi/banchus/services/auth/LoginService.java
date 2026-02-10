@@ -24,7 +24,7 @@ import pe.nanamochi.banchus.entities.db.Session;
 import pe.nanamochi.banchus.entities.db.Stat;
 import pe.nanamochi.banchus.entities.db.User;
 import pe.nanamochi.banchus.entities.redis.PacketBundle;
-import pe.nanamochi.banchus.packets.PacketWriter;
+import pe.nanamochi.banchus.packets.core.PacketWriter;
 import pe.nanamochi.banchus.packets.server.*;
 import pe.nanamochi.banchus.services.communication.ChannelMembersService;
 import pe.nanamochi.banchus.services.communication.ChannelService;
@@ -285,7 +285,6 @@ public class LoginService {
   private void sendWelcomeAndStatusPackets(ByteArrayOutputStream stream, User user)
       throws IOException {
     packetWriter.writePacket(stream, new AnnouncePacket("Welcome to Banchus!"));
-
     if (user.getSilenceEnd() != null) {
       long secondsRemainingSilence =
           Duration.between(Instant.now(), user.getSilenceEnd()).toSeconds();

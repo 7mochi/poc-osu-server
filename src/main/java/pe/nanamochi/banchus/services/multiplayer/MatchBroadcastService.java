@@ -18,7 +18,7 @@ import pe.nanamochi.banchus.entities.packets.MatchSlot;
 import pe.nanamochi.banchus.entities.redis.MultiplayerMatch;
 import pe.nanamochi.banchus.entities.redis.MultiplayerSlot;
 import pe.nanamochi.banchus.entities.redis.PacketBundle;
-import pe.nanamochi.banchus.packets.PacketWriter;
+import pe.nanamochi.banchus.packets.core.PacketWriter;
 import pe.nanamochi.banchus.packets.server.MatchUpdatePacket;
 import pe.nanamochi.banchus.services.communication.ChannelMembersService;
 import pe.nanamochi.banchus.services.communication.ChannelService;

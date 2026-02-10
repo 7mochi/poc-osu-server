@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.entities.commons.*;
 import pe.nanamochi.banchus.entities.db.*;
 import pe.nanamochi.banchus.entities.redis.PacketBundle;
-import pe.nanamochi.banchus.packets.PacketWriter;
+import pe.nanamochi.banchus.packets.core.PacketWriter;
 import pe.nanamochi.banchus.packets.server.MessagePacket;
 import pe.nanamochi.banchus.packets.server.UserStatsPacket;
 import pe.nanamochi.banchus.repositories.db.ScoreRepository;

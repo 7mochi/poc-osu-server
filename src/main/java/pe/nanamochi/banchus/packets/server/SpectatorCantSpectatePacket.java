@@ -1,19 +1,29 @@
 package pe.nanamochi.banchus.packets.server;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pe.nanamochi.banchus.packets.Packet;
-import pe.nanamochi.banchus.packets.Packets;
+import org.springframework.stereotype.Component;
+import pe.nanamochi.banchus.io.data.IDataWriter;
+import pe.nanamochi.banchus.packets.core.Packets;
+import pe.nanamochi.banchus.packets.core.ServerPacket;
 
+@Component
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SpectatorCantSpectatePacket implements Packet {
+public class SpectatorCantSpectatePacket implements ServerPacket {
   private int userId;
 
   @Override
   public Packets getPacketType() {
     return Packets.BANCHO_SPECTATOR_CANT_SPECTATE;
+  }
+
+  @Override
+  public void write(IDataWriter writer, OutputStream stream) throws IOException {
+    writer.writeUint32(stream, userId);
   }
 }

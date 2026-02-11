@@ -25,6 +25,7 @@ import pe.nanamochi.banchus.services.beatmap.BeatmapService;
 import pe.nanamochi.banchus.services.communication.ChannelMembersService;
 import pe.nanamochi.banchus.services.communication.ChannelService;
 import pe.nanamochi.banchus.services.gameplay.performance.CalculatorType;
+import pe.nanamochi.banchus.services.infra.ReplayService;
 import pe.nanamochi.banchus.services.player.RankingService;
 import pe.nanamochi.banchus.services.player.StatService;
 import pe.nanamochi.banchus.services.protocol.PacketBundleService;

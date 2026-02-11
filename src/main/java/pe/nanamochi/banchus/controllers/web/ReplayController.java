@@ -12,8 +12,8 @@ import pe.nanamochi.banchus.entities.db.Score;
 import pe.nanamochi.banchus.entities.db.Session;
 import pe.nanamochi.banchus.entities.db.User;
 import pe.nanamochi.banchus.services.auth.SessionService;
-import pe.nanamochi.banchus.services.gameplay.ReplayService;
 import pe.nanamochi.banchus.services.gameplay.ScoreService;
+import pe.nanamochi.banchus.services.infra.ReplayService;
 import pe.nanamochi.banchus.services.player.UserService;
 
 @RestController

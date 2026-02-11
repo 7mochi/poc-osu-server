@@ -1,9 +1,8 @@
-package pe.nanamochi.banchus.services.gameplay;
+package pe.nanamochi.banchus.services.infra;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.nanamochi.banchus.config.StorageConfig;
-import pe.nanamochi.banchus.services.infra.FileStorageService;
 
 @Service
 @RequiredArgsConstructor

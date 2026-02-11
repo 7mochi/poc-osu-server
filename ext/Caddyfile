@@ -1,4 +1,4 @@
-{$OSU_DOMAIN_URL}, c.{$OSU_DOMAIN_URL}, ce.{$OSU_DOMAIN_URL}, c4.{$OSU_DOMAIN_URL}, b.{$OSU_DOMAIN_URL}, api.{$OSU_DOMAIN_URL}, assets.{$OSU_DOMAIN_URL}, osu.{$OSU_DOMAIN_URL} {
+{$OSU_DOMAIN_URL}, c.{$OSU_DOMAIN_URL}, ce.{$OSU_DOMAIN_URL}, c4.{$OSU_DOMAIN_URL}, b.{$OSU_DOMAIN_URL}, api.{$OSU_DOMAIN_URL}, assets.{$OSU_DOMAIN_URL}, osu.{$OSU_DOMAIN_URL}, a.{$OSU_DOMAIN_URL} {
     encode gzip
 
     handle_path /preview/* {

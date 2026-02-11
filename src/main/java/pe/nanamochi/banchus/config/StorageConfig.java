@@ -9,7 +9,8 @@ import lombok.Getter;
 public enum StorageConfig {
   OSU(Path.of(".data/osu_beatmap_files"), ".osu"),
   REPLAY(Path.of(".data/replays_files"), ".osr"),
-  SCREENSHOT(Path.of(".data/screenshots_files"), ".png");
+  SCREENSHOT(Path.of(".data/screenshots_files"), ".png"),
+  AVATAR(Path.of(".data/avatars_files"), ".png");
 
   private final Path baseDir;
   private final String extension;

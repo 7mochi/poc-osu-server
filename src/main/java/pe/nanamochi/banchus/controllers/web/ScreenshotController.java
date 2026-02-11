@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import pe.nanamochi.banchus.entities.db.User;
-import pe.nanamochi.banchus.services.infra.ScreenshotService;
+import pe.nanamochi.banchus.services.infra.StorageService;
 import pe.nanamochi.banchus.services.player.UserService;
 
 @RestController
@@ -22,7 +22,7 @@ public class ScreenshotController {
   private static final Logger logger = LoggerFactory.getLogger(ScreenshotController.class);
 
   private final UserService userService;
-  private final ScreenshotService screenshotService;
+  private final StorageService storageService;
 
   @PostMapping("/osu-screenshot.php")
   public ResponseEntity<String> screenshotUploadHandler(
@@ -45,7 +45,7 @@ public class ScreenshotController {
           "Incorrect endpoint version for user {}: v{}", user.getUsername(), endpointVersion);
     }
 
-    String filename = screenshotService.saveScreenshot(screenshotFile.getBytes());
+    String filename = storageService.saveScreenshot(screenshotFile.getBytes());
     logger.info("User {} uploaded a screenshot, saved as {}", user.getUsername(), filename);
     return ResponseEntity.ok(filename);
   }

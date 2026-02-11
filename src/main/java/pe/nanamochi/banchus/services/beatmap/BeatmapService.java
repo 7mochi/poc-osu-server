@@ -7,20 +7,19 @@ import java.util.HexFormat;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import pe.nanamochi.banchus.config.StorageConfig;
 import pe.nanamochi.banchus.entities.db.Beatmap;
 import pe.nanamochi.banchus.entities.db.Beatmapset;
 import pe.nanamochi.banchus.mappers.BeatmapMapper;
 import pe.nanamochi.banchus.repositories.db.BeatmapRepository;
 import pe.nanamochi.banchus.services.OsuApiService;
-import pe.nanamochi.banchus.services.infra.FileStorageService;
+import pe.nanamochi.banchus.services.infra.StorageService;
 
 @Service
 @RequiredArgsConstructor
 public class BeatmapService {
   private final BeatmapRepository beatmapRepository;
   private final BeatmapMapper beatmapMapper;
-  private final FileStorageService storageService;
+  private final StorageService storageService;
   private final OsuApiService osuApiService;
   private final BeatmapsetService beatmapsetService;
 
@@ -48,10 +47,8 @@ public class BeatmapService {
   }
 
   public byte[] getOrDownloadOsuFile(int beatmapId, String expectedMd5) {
-    String fileKey = String.valueOf(beatmapId);
-
-    if (storageService.exists(StorageConfig.OSU, fileKey)) {
-      byte[] localFile = storageService.read(StorageConfig.OSU, fileKey);
+    if (storageService.beatmapExists(beatmapId)) {
+      byte[] localFile = storageService.getBeatmap(beatmapId);
 
       if (localFile != null) {
         if (expectedMd5 == null || calculateMd5(localFile).equalsIgnoreCase(expectedMd5)) {
@@ -61,16 +58,15 @@ public class BeatmapService {
     }
 
     byte[] downloaded = osuApiService.getOsuFile(beatmapId);
-    if (downloaded == null) {
-      return null;
+    if (downloaded != null) {
+      storageService.uploadBeatmap(beatmapId, downloaded);
     }
 
-    storageService.write(StorageConfig.OSU, fileKey, downloaded);
     return downloaded;
   }
 
   public Path getBeatmapPath(int beatmapId) {
-    return storageService.getPath(StorageConfig.OSU, String.valueOf(beatmapId));
+    return storageService.getBeatmapPath(beatmapId);
   }
 
   public Beatmap getOrCreateBeatmap(String beatmapMd5) {

@@ -5,18 +5,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import pe.nanamochi.banchus.services.infra.ScreenshotService;
+import pe.nanamochi.banchus.services.infra.StorageService;
 import pe.nanamochi.banchus.utils.Media;
 
 @RestController("StaticScreenshotController")
 @RequestMapping("/")
 @RequiredArgsConstructor
 public class ScreenshotController {
-  private final ScreenshotService screenshotService;
+  private final StorageService storageService;
 
   @GetMapping("/ss/{screenshotId}")
   public ResponseEntity<?> getScreenshot(@PathVariable String screenshotId) {
-    byte[] screenshotData = screenshotService.getScreenshot(screenshotId);
+    byte[] screenshotData = storageService.getScreenshot(screenshotId);
 
     if (screenshotData == null) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND)

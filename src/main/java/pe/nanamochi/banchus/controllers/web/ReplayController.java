@@ -13,7 +13,7 @@ import pe.nanamochi.banchus.entities.db.Session;
 import pe.nanamochi.banchus.entities.db.User;
 import pe.nanamochi.banchus.services.auth.SessionService;
 import pe.nanamochi.banchus.services.gameplay.ScoreService;
-import pe.nanamochi.banchus.services.infra.ReplayService;
+import pe.nanamochi.banchus.services.infra.StorageService;
 import pe.nanamochi.banchus.services.player.UserService;
 
 @RestController
@@ -23,7 +23,7 @@ public class ReplayController {
   private final UserService userService;
   private final SessionService sessionService;
   private final ScoreService scoreService;
-  private final ReplayService replayService;
+  private final StorageService storageService;
 
   @GetMapping(value = "/osu-getreplay.php", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<byte[]> getReplay(
@@ -45,7 +45,7 @@ public class ReplayController {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
-    byte[] replayData = replayService.getReplay(scoreId);
+    byte[] replayData = storageService.getReplay(scoreId);
     if (replayData == null) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }

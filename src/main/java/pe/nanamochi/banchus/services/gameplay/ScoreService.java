@@ -25,7 +25,7 @@ import pe.nanamochi.banchus.services.beatmap.BeatmapService;
 import pe.nanamochi.banchus.services.communication.ChannelMembersService;
 import pe.nanamochi.banchus.services.communication.ChannelService;
 import pe.nanamochi.banchus.services.gameplay.performance.CalculatorType;
-import pe.nanamochi.banchus.services.infra.ReplayService;
+import pe.nanamochi.banchus.services.infra.StorageService;
 import pe.nanamochi.banchus.services.player.RankingService;
 import pe.nanamochi.banchus.services.player.StatService;
 import pe.nanamochi.banchus.services.protocol.PacketBundleService;
@@ -42,7 +42,7 @@ public class ScoreService {
   private final PacketBundleService packetBundleService;
   private final ChannelService channelService;
   private final ChannelMembersService channelMembersService;
-  private final ReplayService replayService;
+  private final StorageService storageService;
   private final StatService statService;
   private final BeatmapService beatmapService;
   private final PerformanceService performanceService;
@@ -325,7 +325,7 @@ public class ScoreService {
     score = saveScore(score);
 
     // Save replay in our filesystem
-    replayService.saveReplay(score.getId(), parsedScore.getReplayBytes());
+    storageService.saveReplay(score.getId(), parsedScore.getReplayBytes());
 
     // Update beatmap stats (plays, passes)
     beatmap.setPlaycount(beatmap.getPlaycount() + 1);

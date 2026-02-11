@@ -5,10 +5,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "banchus.storage.type", havingValue = "local", matchIfMissing = true)
 public class LocalFileStorageProvider implements FileStorageProvider {
   private final String basePath = ".data/";
 
@@ -61,7 +63,7 @@ public class LocalFileStorageProvider implements FileStorageProvider {
   }
 
   @Override
-  public Path resolvePath(String bucket, String key) {
+  public Path getFileAsPath(String bucket, String key) {
     return Path.of(basePath, bucket, key);
   }
 }

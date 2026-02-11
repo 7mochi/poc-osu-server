@@ -1,6 +1,7 @@
 package pe.nanamochi.banchus.startup;
 
 import jakarta.annotation.PostConstruct;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,7 @@ public class DataDirectoryInitializer {
   private final StorageService storageService;
 
   @PostConstruct
-  public void init() {
+  public void init() throws IOException {
     storageService.initStorage();
   }
 }

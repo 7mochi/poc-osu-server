@@ -1,10 +1,11 @@
 package pe.nanamochi.banchus.services.infra.storage;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
 public interface FileStorageProvider {
-  void initialize(List<String> buckets);
+  void initialize(List<String> buckets) throws IOException;
 
   byte[] read(String bucket, String key);
 
@@ -14,5 +15,5 @@ public interface FileStorageProvider {
 
   boolean exists(String bucket, String key);
 
-  Path resolvePath(String bucket, String key);
+  Path getFileAsPath(String bucket, String key);
 }

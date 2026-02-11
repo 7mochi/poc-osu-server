@@ -23,7 +23,7 @@ public class StorageService {
 
   public static final List<String> ALL_BUCKETS = List.of(AVATARS, BEATMAPS, REPLAYS, SCREENSHOTS);
 
-  public void initStorage() {
+  public void initStorage() throws IOException {
     provider.initialize(ALL_BUCKETS);
 
     if (!provider.exists(AVATARS, "default.png")) {
@@ -64,7 +64,7 @@ public class StorageService {
   }
 
   public Path getBeatmapPath(int beatmapId) {
-    return provider.resolvePath(BEATMAPS, beatmapId + ".osu");
+    return provider.getFileAsPath(BEATMAPS, beatmapId + ".osu");
   }
 
   public byte[] getReplay(long scoreId) {

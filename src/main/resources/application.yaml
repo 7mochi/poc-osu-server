@@ -44,6 +44,14 @@ banchus:
     urls: ${SEASONAL_BACKGROUND_URLS:}
   command-prefix: ${COMMAND_PREFIX:!}
   pp-calculator-type: ${PP_CALCULATOR_TYPE:osu-native}
+  storage:
+    type: ${STORAGE_TYPE:local}
+    s3:
+      bucket: ${S3_BUCKET:banchus-data}
+      region: ${S3_REGION:us-east-1}
+      endpoint: ${S3_ENDPOINT:}
+      access-key: ${S3_ACCESS_KEY:}
+      secret-key: ${S3_SECRET_KEY:}
   osu-api:
     v1:
       key: ${OSU_API_V1_KEY}
